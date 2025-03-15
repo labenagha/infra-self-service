@@ -1,0 +1,44 @@
+<!-- index.html (simplified version) -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infrastructure Self-Service Portal</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header>
+        <h1>Infrastructure Self-Service Portal</h1>
+        <div id="user-info">
+            <span id="username">Not logged in</span>
+            <button id="login-button">Login with GitHub</button>
+            <button id="logout-button" style="display:none">Logout</button>
+        </div>
+    </header>
+    
+    <main>
+        <div id="loading" style="display:none">Loading...</div>
+        
+        <div id="resource-selector" style="display:none">
+            <h2>Select Resource Type</h2>
+            <div id="resource-buttons"></div>
+        </div>
+        
+        <div id="resource-form-container" style="display:none">
+            <h2 id="form-title">Create Resource</h2>
+            <form id="resource-form">
+                <div id="form-fields"></div>
+                <div id="environment-selector"></div>
+                <button type="submit">Submit Request</button>
+            </form>
+        </div>
+        
+        <div id="result-message"></div>
+    </main>
+    
+    <script src="js/auth.js"></script>
+    <script src="js/forms.js"></script>
+    <script src="js/api.js"></script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+teams:
+  CIE-Team:
+    role: admin
+    environments: 
+      - dev
+      - test
+      - prod
+    resources:
+      - ServiceBusTopic
+      - SqlDatabase
+      - AppService
+      - StorageAccount
+      - KeyVault
+    approval_required: false
+    
+  DEV-Team:
+    role: contributor
+    environments:
+      - dev
+      - test
+    resources:
+      - ServiceBusTopic
+      - AppService
+    approval_required:
+      dev: false
+      test: true
+      prod: true
+    limitations:
+      ServiceBusTopic:
+        maxSizeInMegabytes: 1024
+      AppService:
+        skuTier: ["Basic", "Standard"]

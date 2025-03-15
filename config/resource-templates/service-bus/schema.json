@@ -1,0 +1,29 @@
+{
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "title": "Topic Name",
+        "description": "Name of the Service Bus Topic"
+      },
+      "messageRetention": {
+        "type": "number",
+        "title": "Message Retention (Days)",
+        "default": 7,
+        "minimum": 1,
+        "maximum": 14
+      },
+      "maxSizeInMegabytes": {
+        "type": "number",
+        "title": "Maximum Size (MB)",
+        "default": 1024,
+        "enum": [1024, 2048, 3072, 4096, 5120]
+      },
+      "requiresDuplicateDetection": {
+        "type": "boolean",
+        "title": "Enable Duplicate Detection",
+        "default": false
+      }
+    },
+    "required": ["name"]
+  }
