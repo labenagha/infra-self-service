@@ -505,17 +505,121 @@
       document.getElementById('resource-form').addEventListener('submit', function(event) {
         event.preventDefault();
         
-        // Hide form
-        document.getElementById('form-container').style.display = 'none';
+        // Get form data
+        const formData = new FormData(event.target);
+        const formDataObj = {};
+        formData.forEach((value, key) => {
+          // Convert checkbox values to boolean
+          if (value === 'on') {
+            formDataObj[key] = true;
+          } else if (value === '') {
+            formDataObj[key] = false;
+          } else {
+            formDataObj[key] = value;
+          }
+        });
         
-        // Show success message
+        // Get resource type
+        const resourceType = document.getElementById('form-title').textContent.includes('Service Bus') ? 'service-bus' : 'storage';
+        const resourceName = formDataObj.name || 'resource';
+        
+        // Get GitHub token from session storage
+        const token = sessionStorage.getItem('github_token');
+        
+        // Prepare the workflow dispatch payload
+        const workflowPayload = {
+          ref: 'main',
+          inputs: {
+            resourceType: resourceType,
+            resourceName: resourceName,
+            resourceConfig: JSON.stringify(formDataObj)
+          }
+        };
+        
+        // Show loading indicator
         document.getElementById('result-message').innerHTML = `
-          <div class="success-message">
-            <h3>Resource Created Successfully</h3>
-            <p>Your resource has been submitted for provisioning. You will be notified when it is ready.</p>
+          <div class="success-message" style="background-color: #f0f8ff; border-left-color: #0095d9;">
+            <h3>Submitting Request...</h3>
+            <p>Please wait while we trigger the provisioning workflow.</p>
           </div>
         `;
+        
+        // Trigger the GitHub workflow
+        fetch('https://api.github.com/repos/labenagha/infra-self-service/actions/workflows/provision.yml/dispatches', {
+          method: 'POST',
+          headers: {
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(workflowPayload)
+        })
+        .then(response => {
+          // Hide form
+          document.getElementById('form-container').style.display = 'none';
+          
+          if (response.status === 204) {
+            // Show success message with GitHub link
+            document.getElementById('result-message').innerHTML = `
+              <div class="success-message">
+                <h3>Resource Created Successfully</h3>
+                <p>Your resource has been submitted for provisioning. You will be notified when it is ready.</p>
+                <p style="margin-top: 15px;">
+                  <a href="https://github.com/labenagha/infra-self-service/actions" 
+                     target="_blank" 
+                     style="color: var(--tandem-blue); text-decoration: none; font-weight: 500;">
+                    View provisioning job in GitHub &rarr;
+                  </a>
+                </p>
+              </div>
+            `;
+          } else {
+            // Show error message
+            document.getElementById('result-message').innerHTML = `
+              <div class="success-message" style="background-color: #fff1f0; border-left-color: #f44336;">
+                <h3>Error Creating Resource</h3>
+                <p>There was an error triggering the provisioning workflow. Please try again or contact support.</p>
+                <p>Error: ${response.status} ${response.statusText}</p>
+              </div>
+            `;
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          document.getElementById('result-message').innerHTML = `
+            <div class="success-message" style="background-color: #fff1f0; border-left-color: #f44336;">
+              <h3>Error Creating Resource</h3>
+              <p>There was an error triggering the provisioning workflow. Please try again or contact support.</p>
+              <p>Error: ${error.message}</p>
+            </div>
+          `;
+        });
       });
+      
+      // Function to process form values (handles checkboxes properly)
+      function getFormValues(form) {
+        const formData = new FormData(form);
+        const values = {};
+        
+        // Get all input elements
+        const inputs = form.querySelectorAll('input, select');
+        
+        // Process each input
+        inputs.forEach(input => {
+          const name = input.name;
+          
+          // Handle different input types
+          if (input.type === 'checkbox') {
+            values[name] = input.checked;
+          } else if (input.type === 'number') {
+            values[name] = input.value ? Number(input.value) : null;
+          } else {
+            values[name] = input.value;
+          }
+        });
+        
+        return values;
+      }
     </script>
   </body>
 </html>
