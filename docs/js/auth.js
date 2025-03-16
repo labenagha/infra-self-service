@@ -149,7 +149,7 @@ async function fetchUserData() {
             console.log('User has viewer permissions');
         }
         
-        // Instead of directly calling loadResourceOptions(), load permissions from the YAML file
+        // Load permissions from the raw GitHub URL
         loadPermissions();
     } catch (error) {
         console.error('Error fetching user data:', error);
@@ -180,9 +180,14 @@ function loadPermissions() {
         return;
     }
     
-    // Fetch and parse the permissions file using the correct path.
-    fetch('/infra-self-service/config/permissions.yml')
-        .then(response => response.text())
+    // Fetch from the raw GitHub URL to avoid GH Pages serving HTML
+    fetch('https://raw.githubusercontent.com/labenagha/infra-self-service/main/config/permissions.yml')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Unable to fetch permissions file: ${response.status} ${response.statusText}`);
+            }
+            return response.text();
+        })
         .then(yamlText => {
             const permissions = jsyaml.load(yamlText);
             // Call the resource option loader from forms.js with the permissions object
