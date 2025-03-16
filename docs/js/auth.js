@@ -1,11 +1,9 @@
-// auth.js - Handles GitHub authentication with Azure Function for token exchange
+// Direct GitHub authentication without Azure Function intermediate
+// Save this as auth-direct.js
 
 // GitHub OAuth App credentials
-const clientId = 'Iv23liYjrKuCgJRPT42k';
-// The callback URL should match exactly what you configured in GitHub
+const clientId = 'Ov23liiDQOjHrrvxTrVl';
 const redirectUri = 'https://labenagha.github.io/infra-self-service/auth/github/callback';
-// URL to your Azure Function - replace with your actual deployed function URL
-const tokenExchangeUrl = 'https://exchange-token.azurewebsites.net/api/httpTrigger1';
 
 // Check for existing token in session storage
 let token = sessionStorage.getItem('github_token');
@@ -21,106 +19,177 @@ const resultMessage = document.getElementById('result-message');
 
 // Initialize the application
 function init() {
+    console.log("Initializing auth-direct.js");
+    
     // Check if we're on the callback URL with a fresh code
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get('code');
+    const state = urlParams.get('state');
+    const savedState = sessionStorage.getItem('github_oauth_state');
+    
+    console.log("Current URL:", window.location.href);
+    console.log("Have code in URL:", !!code);
+    console.log("Have state in URL:", !!state);
+    console.log("Have saved state:", !!savedState);
+    console.log("Have token in session:", !!token);
     
     if (code) {
-        console.log("OAuth code detected, processing login...");
+        console.log("OAuth code detected:", code.substring(0, 5) + "...");
+        
+        // Validate state if provided
+        if (state && savedState && state !== savedState) {
+            console.error("State mismatch, possible CSRF attack");
+            showError("Security error: State parameter mismatch");
+            return;
+        }
+        
         // Clean URL without affecting history state
         const url = new URL(window.location.href);
         url.search = '';
         window.history.replaceState({}, document.title, url.toString());
         
-        // Exchange the code for a token immediately
-        exchangeCodeForToken(code);
+        // Clear saved state
+        sessionStorage.removeItem('github_oauth_state');
+        
+        // IMPORTANT: We can't directly exchange the code for a token from the frontend
+        // Instead, instruct the user what to do next with the code
+        showCodeExchangeGuide(code);
     } else if (token) {
         // We already have a token
+        console.log("Found existing token in session storage");
         showLoggedInState();
         fetchUserData();
     } else {
         // Not logged in
+        console.log("No token found, showing logged out state");
         showLoggedOutState();
     }
 
     // Set up event listeners
     loginButton.addEventListener('click', initiateLogin);
     logoutButton.addEventListener('click', logout);
+    
+    // Add a token input form in the UI
+    createTokenInputForm();
 }
 
 // Start the login process
 function initiateLogin() {
+    console.log("Initiating login process");
+    
     // Generate a state parameter for security
     const state = Math.random().toString(36).substring(2, 15);
     sessionStorage.setItem('github_oauth_state', state);
+    console.log("Generated state:", state);
     
-    // Redirect to GitHub authorization page
-    const authUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=repo,read:org&state=${state}`;
+    // Build authorization URL with all required parameters
+    const authUrl = `https://github.com/login/oauth/authorize?` +
+        `client_id=${encodeURIComponent(clientId)}` +
+        `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+        `&scope=${encodeURIComponent('repo read:org')}` +
+        `&state=${encodeURIComponent(state)}`;
+    
+    console.log("Redirecting to GitHub:", authUrl);
     window.location.href = authUrl;
 }
 
-// Exchange the code for a token using our Azure Function
-async function exchangeCodeForToken(code) {
-    showLoading('Completing login...');
+// Show guide for manual code exchange
+function showCodeExchangeGuide(code) {
+    console.log("Showing code exchange guide");
+    showLoading(false);
     
-    try {
-        console.log("Sending code to exchange function:", code);
-        const response = await fetch(tokenExchangeUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ code })
-        });
+    resultMessage.innerHTML = `
+        <div class="code-exchange-guide">
+            <h3>Authentication Code Received</h3>
+            <p>We received an authentication code from GitHub, but we need your help to complete the process:</p>
+            
+            <div class="code-display">
+                <code>${code}</code>
+                <button id="copy-code-button" class="btn">Copy Code</button>
+            </div>
+            
+            <p>Please follow these steps:</p>
+            <ol>
+                <li>Go to <a href="https://github.com/settings/developers" target="_blank">GitHub Developer Settings</a></li>
+                <li>Open your OAuth App (custom-self-service-tool)</li>
+                <li>Use the code above with your client secret to get an access token</li>
+                <li>Come back and enter the access token below</li>
+            </ol>
+            
+            <div class="token-input">
+                <label for="access-token">Access Token:</label>
+                <input type="text" id="access-token" placeholder="Paste your access token here">
+                <button id="submit-token-button" class="btn">Submit Token</button>
+            </div>
+        </div>
+    `;
+    
+    // Set up event listeners
+    document.getElementById('copy-code-button').addEventListener('click', () => {
+        navigator.clipboard.writeText(code);
+        document.getElementById('copy-code-button').textContent = 'Copied!';
+    });
+    
+    document.getElementById('submit-token-button').addEventListener('click', () => {
+        const tokenInput = document.getElementById('access-token');
+        const inputToken = tokenInput.value.trim();
         
-        console.log("Response status:", response.status);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        
-        // Try to get the raw text first
-        const rawText = await response.text();
-        console.log("Raw response:", rawText);
-        
-        // Then parse it as JSON if possible
-        if (rawText) {
-            try {
-                const data = JSON.parse(rawText);
-                
-                if (data.error) {
-                    throw new Error(data.error_description || data.error);
-                }
-                
-                token = data.access_token;
-                
-                if (!token) {
-                    console.error("No access token in response:", data);
-                    throw new Error("No access token received");
-                }
-                
-                // Store the token in session storage
-                sessionStorage.setItem('github_token', token);
-                
-                // Update UI and fetch user data
-                showLoggedInState();
-                fetchUserData();
-                
-                // Show resource selector
-                hideLoading();
-                
-            } catch (jsonError) {
-                console.error("JSON parsing error:", jsonError);
-                throw new Error(`Invalid JSON response: ${rawText}`);
-            }
+        if (inputToken) {
+            // Store the token and proceed
+            sessionStorage.setItem('github_token', inputToken);
+            token = inputToken;
+            showLoggedInState();
+            fetchUserData();
         } else {
-            throw new Error("Empty response from server");
+            tokenInput.classList.add('error');
         }
-    } catch (error) {
-        console.error('Error exchanging token:', error);
-        showError('Login failed: ' + error.message);
-        hideLoading();
-    }
+    });
+}
+
+// Create a simple form for directly inputting an access token
+function createTokenInputForm() {
+    const tokenForm = document.createElement('div');
+    tokenForm.id = 'token-input-form';
+    tokenForm.style.display = 'none';
+    tokenForm.innerHTML = `
+        <h3>Enter GitHub Access Token</h3>
+        <p>If you already have a GitHub personal access token, you can enter it directly:</p>
+        <div class="token-input">
+            <input type="text" id="direct-access-token" placeholder="Paste your GitHub access token">
+            <button id="direct-submit-token" class="btn">Use Token</button>
+        </div>
+    `;
+    
+    document.body.appendChild(tokenForm);
+    
+    // Add a link to show the form
+    const tokenLink = document.createElement('a');
+    tokenLink.href = '#';
+    tokenLink.textContent = 'Use existing token';
+    tokenLink.style.marginLeft = '10px';
+    tokenLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        document.getElementById('token-input-form').style.display = 'block';
+    });
+    
+    loginButton.parentNode.appendChild(tokenLink);
+    
+    // Set up the submission handler
+    document.getElementById('direct-submit-token').addEventListener('click', () => {
+        const tokenInput = document.getElementById('direct-access-token');
+        const inputToken = tokenInput.value.trim();
+        
+        if (inputToken) {
+            // Store the token and proceed
+            sessionStorage.setItem('github_token', inputToken);
+            token = inputToken;
+            document.getElementById('token-input-form').style.display = 'none';
+            showLoggedInState();
+            fetchUserData();
+        } else {
+            tokenInput.classList.add('error');
+        }
+    });
 }
 
 // Fetch user info and team membership from GitHub API
@@ -241,6 +310,11 @@ function showLoggedOutState() {
 }
 
 function showLoading(message = 'Loading...') {
+    if (message === false) {
+        loadingElement.style.display = 'none';
+        return;
+    }
+    
     loadingElement.innerHTML = `
         <svg width="38" height="38" viewBox="0 0 38 38" xmlns="http://www.w3.org/2000/svg" stroke="#0e639c">
             <g fill="none" fill-rule="evenodd">
