@@ -4,28 +4,21 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Infrastructure Self-Service Portal</title>
-    <!-- Use relative paths for GitHub Pages -->
     <link rel="stylesheet" href="/infra-self-service/css/styles.css" />
-    <!-- Add a professional font -->
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
-    <!-- Add a script to handle the callback URL -->
     <script>
-      // This ensures the callback URL works with GitHub Pages
       (function () {
-        // Check if we're at the root path but should be showing the callback handler
         if (
           window.location.search.includes("code=") &&
           !window.location.pathname.includes("/auth/github/callback")
         ) {
-          // Store the code
           const urlParams = new URLSearchParams(window.location.search);
           const code = urlParams.get("code");
 
           if (code) {
-            // Simulate being on the callback URL
             sessionStorage.setItem("github_auth_code", code);
             console.log("OAuth code detected, processing login...");
           }
@@ -89,10 +82,39 @@
       <div id="result-message"></div>
     </main>
 
-    <!-- Use relative paths for GitHub Pages -->
     <script src="/infra-self-service/js/auth.js"></script>
     <script src="/infra-self-service/js/service-bus-form.js"></script>
     <script src="/infra-self-service/js/servicebus-api.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
+
+    <script>
+      document.getElementById("login-button").addEventListener("click", () => {
+        document.getElementById("result-message").innerHTML = `
+          <div class="token-form">
+            <h3>Enter GitHub Personal Access Token</h3>
+            <p>To use this application, you need a GitHub Personal Access Token with the following scopes:</p>
+            <ul>
+              <li><code>repo</code> - Full control of private repositories</li>
+              <li><code>workflow</code> - Permission to trigger GitHub Actions workflows</li>
+              <li><code>read:org</code> - To verify organization and team membership</li>
+            </ul>
+
+            <ol>
+              <li>Go to <a href="https://github.com/settings/tokens/new" target="_blank">GitHub Personal Access Tokens</a></li>
+              <li>Enter a note like "Infrastructure Self-Service Tool"</li>
+              <li>Select the <code>repo</code>, <code>workflow</code>, and <code>read:org</code> scopes</li>
+              <li>Click "Generate token"</li>
+              <li>Copy the generated token and paste it below</li>
+            </ol>
+
+            <div class="token-input">
+              <input type="text" id="pat-input" placeholder="Paste your GitHub Personal Access Token here">
+              <button id="submit-pat-button" class="btn">Login</button>
+            </div>
+          </div>
+        `;
+      });
+    </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
   </body>
 </html>
