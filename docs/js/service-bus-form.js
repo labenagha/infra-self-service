@@ -39,13 +39,8 @@ function loadResourceForm(resourceType, permissions) {
   ).textContent = `Create ${formatResourceName(resourceType)}`;
 
   // IMPORTANT: Update "your-org/your-repo" to "labenagha/infra-self-service" (or your actual repo)
-  // If your resource type is "Service Bus Topic" when displayed in the UI
-  const resourcePath =
-    resourceType === "Service Bus Topic"
-      ? "service-bus"
-      : resourceType.toLowerCase().replace(/\s+/g, "-");
   fetch(
-    `https://labenagha.github.io/infra-self-service/config/resource-templates/${resourcePath}/schema.json`
+    `https://labenagha.github.io/infra-self-service/config/resource-templates/service-bus/schema.json`
   )
     .then((response) => response.json())
     .then((schema) => {
@@ -180,5 +175,5 @@ document
   .getElementById("resource-form")
   .addEventListener("submit", function (event) {
     event.preventDefault();
-    submitResourceRequest();
+    submitServiceBusRequest();
   });
