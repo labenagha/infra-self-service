@@ -4,13 +4,8 @@ teams:
     environments: 
       - dev
       - test
-      - prod
     resources:
       - ServiceBusTopic
-      - SqlDatabase
-      - AppService
-      - StorageAccount
-      - KeyVault
     approval_required: false
     
   DEV-Team:
@@ -20,7 +15,6 @@ teams:
       - test
     resources:
       - ServiceBusTopic
-      - AppService
     approval_required:
       dev: false
       test: true

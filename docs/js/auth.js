@@ -57,6 +57,7 @@ async function exchangeCodeForToken(code) {
     showLoading('Completing login...');
     
     try {
+        console.log("Sending code to exchange function:", code);
         const response = await fetch(tokenExchangeUrl, {
             method: 'POST',
             headers: {
@@ -65,21 +66,38 @@ async function exchangeCodeForToken(code) {
             body: JSON.stringify({ code })
         });
         
-        if (!response.ok) {
-            throw new Error('Token exchange failed');
+        console.log("Response status:", response.status);
+        
+        // Try to get the raw text first
+        const rawText = await response.text();
+        console.log("Raw response:", rawText);
+        
+        // Then parse it as JSON if possible
+        if (rawText) {
+            try {
+                const data = JSON.parse(rawText);
+                token = data.access_token;
+                
+                if (!token) {
+                    console.error("No access token in response:", data);
+                    throw new Error("No access token received");
+                }
+                
+                // Store the token in session storage
+                sessionStorage.setItem('github_token', token);
+                
+                // Redirect to the main page
+                window.location.href = '/infra-self-service/';
+            } catch (jsonError) {
+                console.error("JSON parsing error:", jsonError);
+                throw new Error(`Invalid JSON response: ${rawText}`);
+            }
+        } else {
+            throw new Error("Empty response from server");
         }
-        
-        const data = await response.json();
-        token = data.access_token;
-        
-        // Store the token in session storage
-        sessionStorage.setItem('github_token', token);
-        
-        // Redirect to the main page
-        window.location.href = '/infra-self-service/';
     } catch (error) {
         console.error('Error exchanging token:', error);
-        showError('Login failed. Please try again.');
+        showError('Login failed: ' + error.message);
         // Wait 3 seconds then redirect to main page
         setTimeout(() => {
             window.location.href = '/infra-self-service/';
