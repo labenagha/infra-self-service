@@ -1,0 +1,106 @@
+# .github/workflows/provision-servicebus.yml
+name: Provision Service Bus Topic
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment (dev/test)'
+        required: true
+        type: choice
+        options:
+          - dev
+          - test
+      resourceName:
+        description: 'Service Bus Topic Name'
+        required: true
+        type: string
+      messageRetention:
+        description: 'Message Retention (Days)'
+        required: true
+        default: '7'
+        type: string
+      maxSizeInMegabytes:
+        description: 'Maximum Size (MB)'
+        required: true
+        default: '1024'
+        type: string
+      requiresDuplicateDetection:
+        description: 'Enable Duplicate Detection'
+        required: true
+        default: 'false'
+        type: string
+  pull_request:
+    types: [closed]
+    paths:
+      - '*/servicebus*/*'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+      
+      - name: Terraform Init
+        run: |
+          cd environments/${{ github.event.inputs.environment || 'dev' }}
+          terraform init
+      
+      - name: Terraform Validate
+        run: |
+          cd environments/${{ github.event.inputs.environment || 'dev' }}
+          terraform validate
+  
+  apply:
+    needs: validate
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+      
+      - name: Configure Azure credentials
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
+      - name: Terraform Init
+        run: |
+          cd environments/${{ github.event.inputs.environment || 'dev' }}
+          terraform init
+      
+      - name: Terraform Apply
+        run: |
+          cd environments/${{ github.event.inputs.environment || 'dev' }}
+          
+          # Create tfvars file if workflow_dispatch
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            cat > terraform.tfvars <<EOF
+resource_name = "${{ github.event.inputs.resourceName }}"
+message_retention = ${{ github.event.inputs.messageRetention }}
+max_size_mb = ${{ github.event.inputs.maxSizeInMegabytes }}
+requires_duplicate_detection = ${{ github.event.inputs.requiresDuplicateDetection == 'true' }}
+EOF
+          fi
+          
+          # Apply with auto-approve
+          terraform apply -auto-approve
+      
+      - name: Notify completion
+        if: success()
+        uses: peter-evans/create-or-update-comment@v2
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ✅ Service Bus Topic has been successfully provisioned!
+            
+            **Environment:** ${{ github.event.inputs.environment || 'dev' }}
+            **Resource Name:** ${{ github.event.inputs.resourceName }}

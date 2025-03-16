@@ -1,123 +1,123 @@
-# .github/workflows/infrastructure-request.yml
-name: Process Infrastructure Request
+# # .github/workflows/infrastructure-request.yml
+# name: Process Infrastructure Request
 
-on:
-  pull_request:
-    paths:
-      - 'requests/**/*.yml'
+# on:
+#   pull_request:
+#     paths:
+#       - 'requests/**/*.yml'
 
-jobs:
-  validate:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
+# jobs:
+#   validate:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/checkout@v3
       
-      - name: Get changed files
-        id: changed-files
-        uses: tj-actions/changed-files@v35
-        with:
-          files: requests/**/*.yml
+#       - name: Get changed files
+#         id: changed-files
+#         uses: tj-actions/changed-files@v35
+#         with:
+#           files: requests/**/*.yml
           
-      - name: Validate request permissions
-        id: validate
-        run: |
-          REQUEST_FILE="${{ steps.changed-files.outputs.all_changed_files }}"
-          REQUESTER="${{ github.event.pull_request.user.login }}"
+#       - name: Validate request permissions
+#         id: validate
+#         run: |
+#           REQUEST_FILE="${{ steps.changed-files.outputs.all_changed_files }}"
+#           REQUESTER="${{ github.event.pull_request.user.login }}"
           
-          # Get team membership
-          TEAMS=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/users/$REQUESTER/teams" | jq -r '.[].name')
+#           # Get team membership
+#           TEAMS=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+#             "https://api.github.com/users/$REQUESTER/teams" | jq -r '.[].name')
           
-          # Check if user is in admin team
-          if echo "$TEAMS" | grep -q "CIE-Team"; then
-            echo "User is admin, approving request"
-            echo "IS_ADMIN=true" >> $GITHUB_ENV
-            exit 0
-          fi
+#           # Check if user is in admin team
+#           if echo "$TEAMS" | grep -q "CIE-Team"; then
+#             echo "User is admin, approving request"
+#             echo "IS_ADMIN=true" >> $GITHUB_ENV
+#             exit 0
+#           fi
           
-          # Parse request YAML
-          RESOURCE_TYPE=$(yq -r '.kind' $REQUEST_FILE)
-          ENVIRONMENT=$(yq -r '.metadata.environment' $REQUEST_FILE)
+#           # Parse request YAML
+#           RESOURCE_TYPE=$(yq -r '.kind' $REQUEST_FILE)
+#           ENVIRONMENT=$(yq -r '.metadata.environment' $REQUEST_FILE)
           
-          # Check if DEV team can access this resource and environment
-          if echo "$TEAMS" | grep -q "DEV-Team"; then
-            # Check resource type permission
-            ALLOWED_RESOURCES=$(yq -r '.teams."DEV-Team".resources[]' ./config/permissions.yml)
-            if ! echo "$ALLOWED_RESOURCES" | grep -q "$RESOURCE_TYPE"; then
-              echo "::error::User not allowed to create $RESOURCE_TYPE resources"
-              exit 1
-            fi
+#           # Check if DEV team can access this resource and environment
+#           if echo "$TEAMS" | grep -q "DEV-Team"; then
+#             # Check resource type permission
+#             ALLOWED_RESOURCES=$(yq -r '.teams."DEV-Team".resources[]' ./config/permissions.yml)
+#             if ! echo "$ALLOWED_RESOURCES" | grep -q "$RESOURCE_TYPE"; then
+#               echo "::error::User not allowed to create $RESOURCE_TYPE resources"
+#               exit 1
+#             fi
             
-            # Check environment permission
-            ALLOWED_ENVS=$(yq -r '.teams."DEV-Team".environments[]' ./config/permissions.yml)
-            if ! echo "$ALLOWED_ENVS" | grep -q "$ENVIRONMENT"; then
-              echo "::error::User not allowed to deploy to $ENVIRONMENT"
-              exit 1
-            fi
+#             # Check environment permission
+#             ALLOWED_ENVS=$(yq -r '.teams."DEV-Team".environments[]' ./config/permissions.yml)
+#             if ! echo "$ALLOWED_ENVS" | grep -q "$ENVIRONMENT"; then
+#               echo "::error::User not allowed to deploy to $ENVIRONMENT"
+#               exit 1
+#             fi
             
-            # Check if approval required
-            APPROVAL_REQUIRED=$(yq -r '.teams."DEV-Team".approval_required.'$ENVIRONMENT ./config/permissions.yml)
-            if [ "$APPROVAL_REQUIRED" = "true" ]; then
-              echo "REQUIRES_APPROVAL=true" >> $GITHUB_ENV
-            else
-              echo "REQUIRES_APPROVAL=false" >> $GITHUB_ENV
-            fi
+#             # Check if approval required
+#             APPROVAL_REQUIRED=$(yq -r '.teams."DEV-Team".approval_required.'$ENVIRONMENT ./config/permissions.yml)
+#             if [ "$APPROVAL_REQUIRED" = "true" ]; then
+#               echo "REQUIRES_APPROVAL=true" >> $GITHUB_ENV
+#             else
+#               echo "REQUIRES_APPROVAL=false" >> $GITHUB_ENV
+#             fi
             
-            echo "IS_ADMIN=false" >> $GITHUB_ENV
-            exit 0
-          fi
+#             echo "IS_ADMIN=false" >> $GITHUB_ENV
+#             exit 0
+#           fi
           
-          echo "::error::User not in any authorized team"
-          exit 1
+#           echo "::error::User not in any authorized team"
+#           exit 1
           
-      - name: Auto-approve if allowed
-        if: env.IS_ADMIN == 'true' || env.REQUIRES_APPROVAL == 'false'
-        uses: hmarr/auto-approve-action@v3
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+#       - name: Auto-approve if allowed
+#         if: env.IS_ADMIN == 'true' || env.REQUIRES_APPROVAL == 'false'
+#         uses: hmarr/auto-approve-action@v3
+#         with:
+#           github-token: ${{ secrets.GITHUB_TOKEN }}
           
-      - name: Request review if needed
-        if: env.REQUIRES_APPROVAL == 'true'
-        run: |
-          gh pr edit "${{ github.event.pull_request.number }}" --add-reviewer "CIE-Team"
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#       - name: Request review if needed
+#         if: env.REQUIRES_APPROVAL == 'true'
+#         run: |
+#           gh pr edit "${{ github.event.pull_request.number }}" --add-reviewer "CIE-Team"
+#         env:
+#           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  deploy:
-    needs: validate
-    if: github.event.pull_request.merged == true
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
+#   deploy:
+#     needs: validate
+#     if: github.event.pull_request.merged == true
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/checkout@v3
       
-      - name: Get changed files
-        id: changed-files
-        uses: tj-actions/changed-files@v35
-        with:
-          files: requests/**/*.yml
+#       - name: Get changed files
+#         id: changed-files
+#         uses: tj-actions/changed-files@v35
+#         with:
+#           files: requests/**/*.yml
           
-      - name: Generate infrastructure code
-        run: |
-          REQUEST_FILE="${{ steps.changed-files.outputs.all_changed_files }}"
-          RESOURCE_TYPE=$(yq -r '.kind' $REQUEST_FILE)
+#       - name: Generate infrastructure code
+#         run: |
+#           REQUEST_FILE="${{ steps.changed-files.outputs.all_changed_files }}"
+#           RESOURCE_TYPE=$(yq -r '.kind' $REQUEST_FILE)
           
-          # Use resource type to select template
-          case "$RESOURCE_TYPE" in
-            "ServiceBusTopic")
-              # Generate ARM/Terraform/etc. from request YAML
-              ./scripts/generate-service-bus.sh "$REQUEST_FILE"
-              ;;
-            "AppService")
-              ./scripts/generate-app-service.sh "$REQUEST_FILE"
-              ;;
-            *)
-              echo "Unknown resource type: $RESOURCE_TYPE"
-              exit 1
-              ;;
-          esac
+#           # Use resource type to select template
+#           case "$RESOURCE_TYPE" in
+#             "ServiceBusTopic")
+#               # Generate ARM/Terraform/etc. from request YAML
+#               ./scripts/generate-service-bus.sh "$REQUEST_FILE"
+#               ;;
+#             "AppService")
+#               ./scripts/generate-app-service.sh "$REQUEST_FILE"
+#               ;;
+#             *)
+#               echo "Unknown resource type: $RESOURCE_TYPE"
+#               exit 1
+#               ;;
+#           esac
       
-      - name: Call your existing deployment workflow
-        uses: benc-uk/workflow-dispatch@v1
-        with:
-          workflow: your-existing-workflow.yml
-          inputs: '{"resourceType": "${{ env.RESOURCE_TYPE }}", "configPath": "${{ env.CONFIG_PATH }}"}'
+#       - name: Call your existing deployment workflow
+#         uses: benc-uk/workflow-dispatch@v1
+#         with:
+#           workflow: your-existing-workflow.yml
+#           inputs: '{"resourceType": "${{ env.RESOURCE_TYPE }}", "configPath": "${{ env.CONFIG_PATH }}"}'
