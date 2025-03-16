@@ -1,9 +1,24 @@
 
+locals {
+  environment = "test"
+  location    = "eastus"
+  common_tags = {
+    Environment = local.environment
+    ManagedBy   = "terraform"
+  }
+}
+
+resource "azurerm_resource_group" "rg" {
+  name     = "rg-selfservice-${local.environment}"
+  location = local.location
+  tags     = local.common_tags
+}
+
 module "storage_account" {
   source = "../storage-account"
 
   resource_name                 = "mystorageaccount"
-  resource_group_name           = "rg-selfservice-storage-acct"
+  resource_group_name           = azurerm_resource_group.rg.name
   location                      = "eastus"
   
   # Optional parameters with defaults
