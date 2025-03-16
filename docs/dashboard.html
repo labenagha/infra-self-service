@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tandem Infrastructure Self-Service</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/infra-self-service/css/styles.css" />
+  </head>
+  <body>
+    <header>
+      <div class="header-content">
+        <img src="/docs/assets/tandem-logo.jpeg" alt="Tandem Diabetes Care Logo" class="logo" />
+        <h1>Infrastructure Self-Service Portal</h1>
+      </div>
+      <div class="user-info">
+        <span id="username">Loading user...</span>
+        <button id="logout-button">Logout</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="welcome-section">
+        <h2>Welcome to Self-Service Infrastructure</h2>
+        <p>Select a resource type below to provision new infrastructure components.</p>
+      </section>
+
+      <section class="resource-section">
+        <div class="resource-tiles">
+          <div class="resource-tile">
+            <h3>Virtual Machines</h3>
+            <p>Deploy and configure virtual machines with predefined templates.</p>
+            <button class="resource-button" data-resource="vm">Create VM</button>
+          </div>
+          
+          <div class="resource-tile">
+            <h3>Storage Accounts</h3>
+            <p>Create and manage storage accounts for your application data.</p>
+            <button class="resource-button" data-resource="storage">Create Storage</button>
+          </div>
+          
+          <div class="resource-tile">
+            <h3>Service Bus</h3>
+            <p>Set up messaging services for your applications.</p>
+            <button class="resource-button" data-resource="servicebus">Create Service Bus</button>
+          </div>
+        </div>
+      </section>
+
+      <div id="loading" style="display: none">
+        <div class="loader"></div>
+      </div>
+
+      <div id="resource-form-container" style="display: none">
+        <div class="form-header">
+          <h2 id="form-title">Create Resource</h2>
+          <button id="close-form" class="close-button">&times;</button>
+        </div>
+        <form id="resource-form">
+          <div id="form-fields"></div>
+          <div id="environment-selector"></div>
+          <div class="form-actions">
+            <button type="button" id="cancel-form">Cancel</button>
+            <button type="submit" id="submit-form">Submit Request</button>
+          </div>
+        </form>
+      </div>
+
+      <div id="result-message"></div>
+    </main>
+
+    <footer>
+      <p>&copy; 2025 Tandem Diabetes Care. All rights reserved.</p>
+    </footer>
+
+    <script src="/infra-self-service/js/service-bus-form.js"></script>
+    <script src="/infra-self-service/js/servicebus-api.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
+
+    <script>
+      // Check if user is logged in
+      document.addEventListener("DOMContentLoaded", function() {
+        const token = sessionStorage.getItem("github_token");
+        if (!token) {
+          // Redirect to login page if no token
+          window.location.href = "/infra-self-service/index.html";
+        } else {
+          // Display username (in a real app, you would fetch this from GitHub API)
+          document.getElementById("username").textContent = "Authenticated User";
+        }
+      });
+
+      // Logout button handler
+      document.getElementById("logout-button").addEventListener("click", function() {
+        sessionStorage.removeItem("github_token");
+        window.location.href = "/infra-self-service/index.html";
+      });
+
+      // Resource buttons functionality
+      document.querySelectorAll(".resource-button").forEach(button => {
+        button.addEventListener("click", function() {
+          const resourceType = this.parentElement.querySelector("h3").textContent;
+          document.getElementById("form-title").textContent = `Create ${resourceType}`;
+          document.getElementById("resource-form-container").style.display = "block";
+          // In a real implementation, you would load the appropriate form fields based on the resource type
+        });
+      });
+
+      // Close and cancel form buttons
+      document.getElementById("close-form").addEventListener("click", function() {
+        document.getElementById("resource-form-container").style.display = "none";
+      });
+
+      document.getElementById("cancel-form").addEventListener("click", function() {
+        document.getElementById("resource-form-container").style.display = "none";
+      });
+
+      // Form submission
+      document.getElementById("resource-form").addEventListener("submit", function(event) {
+        event.preventDefault();
+        
+        // Show loading indicator
+        document.getElementById("loading").style.display = "flex";
+        document.getElementById("resource-form-container").style.display = "none";
+        
+        // Simulate form submission (replace with actual API call)
+        setTimeout(function() {
+          document.getElementById("loading").style.display = "none";
+          document.getElementById("result-message").innerHTML = `
+            <div class="success-message">
+              <h3>Resource Created Successfully</h3>
+              <p>Your resource has been submitted for provisioning. You will be notified when it is ready.</p>
+            </div>
+          `;
+        }, 2000);
+      });
+    </script>
+  </body>
+</html>
