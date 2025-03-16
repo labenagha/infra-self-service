@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirecting...</title>
+    <script>
+        // This script handles the OAuth callback
+        // GitHub Pages doesn't support server routes, so we need to redirect back to index
+        // while preserving the OAuth code
+        (function() {
+            // Check if we have a code parameter (GitHub OAuth callback)
+            const queryParams = window.location.search;
+            if (queryParams.includes('code=')) {
+                // We have a code from GitHub OAuth
+                window.location.href = '/infra-self-service/' + queryParams;
+            } else {
+                // Just a regular 404, go to homepage
+                window.location.href = '/infra-self-service/';
+            }
+        })();
+    </script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .loading {
+            text-align: center;
+        }
+        .loading h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .spinner {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top-color: #0e639c;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading">
+        <div class="spinner"></div>
+        <h2>Redirecting back to application...</h2>
+    </div>
+</body>
+</html>

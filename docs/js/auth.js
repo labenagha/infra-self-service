@@ -1,110 +1,206 @@
-// auth.js
-const clientId = 'your-github-oauth-app-id';
-const redirectUri = 'https://infra.yourcompany.com/callback';
+// auth.js - Handles GitHub authentication with Azure Function for token exchange
+
+// GitHub OAuth App credentials
+const clientId = 'Iv23liYjrKuCgJRPT42k';
+// The callback URL should match exactly what you configured in GitHub
+const redirectUri = 'https://labenagha.github.io/infra-self-service/auth/github/callback';
+// URL to your Azure Function - replace with your actual deployed function URL
+const tokenExchangeUrl = 'https://your-function-app.azurewebsites.net/api/httpTrigger1';
+
+// Check for existing token in session storage
 let token = sessionStorage.getItem('github_token');
 let userPermissions = null;
 
-// Check if we're returning from auth
-const code = new URLSearchParams(window.location.search).get('code');
-if (code) {
-    // Exchange code for token via serverless function
-    // (GitHub OAuth requires a server component for the token exchange)
-    fetch('https://your-exchange-function.azurewebsites.net/api/exchange-token', {
-        method: 'POST',
-        body: JSON.stringify({ code })
-    })
-    .then(response => response.json())
-    .then(data => {
-        token = data.access_token;
-        sessionStorage.setItem('github_token', token);
-        window.history.replaceState({}, document.title, '/');
-        initializeApp();
-    });
-} else if (token) {
-    initializeApp();
-} else {
-    document.getElementById('login-button').addEventListener('click', () => {
-        window.location.href = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=repo,read:org`;
-    });
+// DOM elements
+const loginButton = document.getElementById('login-button');
+const logoutButton = document.getElementById('logout-button');
+const usernameElement = document.getElementById('username');
+const loadingElement = document.getElementById('loading');
+const resourceSelector = document.getElementById('resource-selector');
+const resultMessage = document.getElementById('result-message');
+
+// Initialize the application
+function init() {
+    // Check if we're on the callback URL or have a stored auth code
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code') || sessionStorage.getItem('github_auth_code');
+    
+    if (code) {
+        // Clear the stored auth code if it exists
+        sessionStorage.removeItem('github_auth_code');
+        
+        // We have a code from GitHub OAuth redirect
+        exchangeCodeForToken(code);
+    } else if (token) {
+        // We already have a token
+        showLoggedInState();
+        fetchUserData();
+    } else {
+        // Not logged in
+        showLoggedOutState();
+    }
+
+    // Set up event listeners
+    loginButton.addEventListener('click', initiateLogin);
+    logoutButton.addEventListener('click', logout);
 }
 
-function initializeApp() {
-    document.getElementById('login-button').style.display = 'none';
-    document.getElementById('logout-button').style.display = 'block';
-    document.getElementById('loading').style.display = 'block';
+// Start the login process
+function initiateLogin() {
+    // Redirect to GitHub authorization page
+    const authUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=repo,read:org`;
+    window.location.href = authUrl;
+}
+
+// Exchange the code for a token using our Azure Function
+async function exchangeCodeForToken(code) {
+    showLoading('Completing login...');
     
-    // Fetch user info and teams
-    Promise.all([
-        fetch('https://api.github.com/user', { headers: { Authorization: `token ${token}` } }).then(r => r.json()),
-        fetch('https://api.github.com/user/teams', { headers: { Authorization: `token ${token}` } }).then(r => r.json())
-    ])
-    .then(([user, teams]) => {
-        document.getElementById('username').textContent = user.login;
+    try {
+        const response = await fetch(tokenExchangeUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ code })
+        });
         
-        // Check if user is in CIE or DEV team
+        if (!response.ok) {
+            throw new Error('Token exchange failed');
+        }
+        
+        const data = await response.json();
+        token = data.access_token;
+        
+        // Store the token in session storage
+        sessionStorage.setItem('github_token', token);
+        
+        // Redirect to the main page
+        window.location.href = '/infra-self-service/';
+    } catch (error) {
+        console.error('Error exchanging token:', error);
+        showError('Login failed. Please try again.');
+        // Wait 3 seconds then redirect to main page
+        setTimeout(() => {
+            window.location.href = '/infra-self-service/';
+        }, 3000);
+    } finally {
+        hideLoading();
+    }
+}
+
+// Fetch user info and team membership from GitHub API
+async function fetchUserData() {
+    showLoading('Loading your information...');
+    
+    try {
+        // Fetch user information
+        const userResponse = await fetch('https://api.github.com/user', {
+            headers: { Authorization: `token ${token}` }
+        });
+        
+        if (!userResponse.ok) {
+            throw new Error('Failed to fetch user data');
+        }
+        
+        const user = await userResponse.json();
+        usernameElement.textContent = user.login;
+        
+        // Fetch user's teams
+        const teamsResponse = await fetch('https://api.github.com/user/teams', {
+            headers: { Authorization: `token ${token}` }
+        });
+        
+        if (!teamsResponse.ok) {
+            throw new Error('Failed to fetch teams data');
+        }
+        
+        const teams = await teamsResponse.json();
         const teamNames = teams.map(team => team.name);
+        
+        // Determine user permissions based on team membership
         if (teamNames.includes('CIE-Team')) {
             userPermissions = 'admin';
+            console.log('User has admin permissions');
         } else if (teamNames.includes('DEV-Team')) {
             userPermissions = 'contributor';
+            console.log('User has contributor permissions');
         } else {
             userPermissions = 'viewer';
+            console.log('User has viewer permissions');
         }
         
-        // Fetch permission configuration
-        return fetch('https://raw.githubusercontent.com/your-org/your-repo/main/config/permissions.yml');
-    })
-    .then(response => response.text())
-    .then(yamlText => {
-        // In production, use proper YAML parser
-        // This is simplified for example
-        const permissions = parseYaml(yamlText);
-        loadResourceOptions(permissions);
-    })
-    .catch(error => {
-        console.error('Error initializing app:', error);
-        document.getElementById('result-message').textContent = 'Error initializing application. Please try again.';
-    })
-    .finally(() => {
-        document.getElementById('loading').style.display = 'none';
-    });
-}
-
-document.getElementById('logout-button').addEventListener('click', () => {
-    sessionStorage.removeItem('github_token');
-    window.location.reload();
-});
-
-// Helper function to parse YAML (simplified for example)
-function parseYaml(yaml) {
-    // In production, use js-yaml or another proper parser
-    // This is just for illustration
-    return {
-        teams: {
-            'CIE-Team': {
-                role: 'admin',
-                environments: ['dev', 'test', 'prod'],
-                resources: ['ServiceBusTopic', 'SqlDatabase', 'AppService', 'StorageAccount', 'KeyVault'],
-                approval_required: false
-            },
-            'DEV-Team': {
-                role: 'contributor',
-                environments: ['dev', 'test'],
-                resources: ['ServiceBusTopic', 'AppService'],
-                approval_required: {
-                    dev: false,
-                    test: true,
-                    prod: true
-                },
-                limitations: {
-                    ServiceBusTopic: {
-                        maxSizeInMegabytes: 1024
-                    },
-                    AppService: {
-                        skuTier: ['Basic', 'Standard']
-                    }
-                }
-            }
+        // Load resources based on permissions
+        loadResourceOptions();
+    } catch (error) {
+        console.error('Error fetching user data:', error);
+        
+        // If the token is invalid, log out
+        if (error.message.includes('401') || error.message.includes('Failed to fetch')) {
+            console.log('Invalid token, logging out');
+            logout();
         }
-    };
+        
+        showError('Failed to load user data. Please try again.');
+    } finally {
+        hideLoading();
+    }
 }
+
+// Log the user out
+function logout() {
+    sessionStorage.removeItem('github_token');
+    token = null;
+    userPermissions = null;
+    
+    // Reset UI state
+    showLoggedOutState();
+    document.getElementById('resource-selector').style.display = 'none';
+    document.getElementById('resource-form-container').style.display = 'none';
+    resultMessage.textContent = '';
+}
+
+// UI state management functions
+function showLoggedInState() {
+    loginButton.style.display = 'none';
+    logoutButton.style.display = 'inline-block';
+}
+
+function showLoggedOutState() {
+    loginButton.style.display = 'inline-block';
+    logoutButton.style.display = 'none';
+    usernameElement.textContent = 'Not logged in';
+}
+
+function showLoading(message = 'Loading...') {
+    loadingElement.innerHTML = `
+        <svg width="38" height="38" viewBox="0 0 38 38" xmlns="http://www.w3.org/2000/svg" stroke="#0e639c">
+            <g fill="none" fill-rule="evenodd">
+                <g transform="translate(1 1)" stroke-width="2">
+                    <circle stroke-opacity=".5" cx="18" cy="18" r="18"/>
+                    <path d="M36 18c0-9.94-8.06-18-18-18">
+                        <animateTransform attributeName="transform" type="rotate" from="0 18 18" to="360 18 18" dur="1s" repeatCount="indefinite"/>
+                    </path>
+                </g>
+            </g>
+        </svg>
+        <div style="margin-top: 10px;">${message}</div>
+    `;
+    loadingElement.style.display = 'flex';
+}
+
+function hideLoading() {
+    loadingElement.style.display = 'none';
+}
+
+function showError(message) {
+    resultMessage.innerHTML = `
+        <div class="error-message">
+            <h3>Error</h3>
+            <p>${message}</p>
+        </div>
+    `;
+}
+
+// Initialize the application
+init();

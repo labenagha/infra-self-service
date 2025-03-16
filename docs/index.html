@@ -4,9 +4,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Infrastructure Self-Service Portal</title>
-    <link rel="stylesheet" href="css/styles.css">
+    <!-- Use relative paths for GitHub Pages -->
+    <link rel="stylesheet" href="/infra-self-service/css/styles.css">
     <!-- Add a professional font -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Add a script to handle the callback URL -->
+    <script>
+        // This ensures the callback URL works with GitHub Pages
+        (function() {
+            // Check if we're at the root path but should be showing the callback handler
+            if (window.location.search.includes('code=') && !window.location.pathname.includes('/auth/github/callback')) {
+                // Store the code
+                const urlParams = new URLSearchParams(window.location.search);
+                const code = urlParams.get('code');
+                
+                if (code) {
+                    // Simulate being on the callback URL
+                    sessionStorage.setItem('github_auth_code', code);
+                    console.log('OAuth code detected, processing login...');
+                }
+            }
+        })();
+    </script>
 </head>
 <body>
     <header>
@@ -51,8 +70,9 @@
         <div id="result-message"></div>
     </main>
     
-    <script src="js/auth.js"></script>
-    <script src="js/forms.js"></script>
-    <script src="js/api.js"></script>
+    <!-- Use relative paths for GitHub Pages -->
+    <script src="/infra-self-service/js/auth.js"></script>
+    <script src="/infra-self-service/js/forms.js"></script>
+    <script src="/infra-self-service/js/api.js"></script>
 </body>
 </html>
