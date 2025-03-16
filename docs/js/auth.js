@@ -135,13 +135,15 @@ async function fetchUserData() {
         }
         
         const teams = await teamsResponse.json();
+        console.log('Teams from GitHub:', teams); // <--- LOG entire objects
         const teamNames = teams.map(team => team.name);
+        console.log('Team Names:', teamNames);     // <--- LOG array of names
         
         // Determine user permissions based on team membership
-        if (teamNames.includes('CIE-Team')) {
+        if (teamNames.includes('cie-team')) {
             userPermissions = 'admin';
             console.log('User has admin permissions');
-        } else if (teamNames.includes('DEV-Team')) {
+        } else if (teamNames.includes('epo-team')) {
             userPermissions = 'contributor';
             console.log('User has contributor permissions');
         } else {

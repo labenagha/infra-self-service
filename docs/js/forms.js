@@ -6,9 +6,10 @@ function loadResourceOptions(permissions) {
     // Determine available resources based on user permission
     let availableResources = [];
     if (userPermissions === 'admin') {
-        availableResources = permissions.teams['CIE-Team'].resources;
+        // Use the same key as in permissions.yml
+        availableResources = permissions.teams['cie-team'].resources;
     } else if (userPermissions === 'contributor') {
-        availableResources = permissions.teams['DEV-Team'].resources;
+        availableResources = permissions.teams['epo-team'].resources;
     }
     
     // Create buttons for each resource type
@@ -33,8 +34,8 @@ function loadResourceForm(resourceType, permissions) {
     
     document.getElementById('form-title').textContent = `Create ${formatResourceName(resourceType)}`;
     
-    // Load resource-specific form fields
-    fetch(`https://raw.githubusercontent.com/your-org/your-repo/main/config/resource-templates/${resourceType.toLowerCase()}/schema.json`)
+    // IMPORTANT: Update "your-org/your-repo" to "labenagha/infra-self-service" (or your actual repo)
+    fetch(`https://labenagha.github.io/infra-self-service/config/resource-templates/${resourceType.toLowerCase()}/schema.json`)
         .then(response => response.json())
         .then(schema => {
             // Create form fields based on schema
@@ -70,12 +71,12 @@ function loadResourceForm(resourceType, permissions) {
                 input.name = fieldName;
                 
                 // Apply limitations for contributor users
-                if (userPermissions === 'contributor' && 
-                    permissions.teams['DEV-Team'].limitations &&
-                    permissions.teams['DEV-Team'].limitations[resourceType] &&
-                    permissions.teams['DEV-Team'].limitations[resourceType][fieldName]) {
+                if (userPermissions === 'contributor' &&
+                    permissions.teams['epo-team'].limitations &&
+                    permissions.teams['epo-team'].limitations[resourceType] &&
+                    permissions.teams['epo-team'].limitations[resourceType][fieldName]) {
                     
-                    const limitation = permissions.teams['DEV-Team'].limitations[resourceType][fieldName];
+                    const limitation = permissions.teams['epo-team'].limitations[resourceType][fieldName];
                     if (Array.isArray(limitation)) {
                         // For enum types, filter options
                         if (input.tagName === 'SELECT') {
@@ -119,9 +120,9 @@ function loadEnvironmentSelector(resourceType, permissions) {
     // Get available environments based on permissions
     let environments = [];
     if (userPermissions === 'admin') {
-        environments = permissions.teams['CIE-Team'].environments;
+        environments = permissions.teams['cie-team'].environments;
     } else if (userPermissions === 'contributor') {
-        environments = permissions.teams['DEV-Team'].environments;
+        environments = permissions.teams['epo-team'].environments;
     }
     
     environments.forEach(env => {
@@ -140,9 +141,9 @@ function loadEnvironmentSelector(resourceType, permissions) {
     
     select.addEventListener('change', () => {
         const selectedEnv = select.value;
-        if (userPermissions === 'contributor' && 
-            permissions.teams['DEV-Team'].approval_required &&
-            permissions.teams['DEV-Team'].approval_required[selectedEnv]) {
+        if (userPermissions === 'contributor' &&
+            permissions.teams['epo-team'].approval_required &&
+            permissions.teams['epo-team'].approval_required[selectedEnv]) {
             approvalInfo.textContent = '* Requires approval from CIE team';
         } else {
             approvalInfo.innerHTML = '&nbsp;';

@@ -1,14 +1,14 @@
 teams:
-  CIE-Team:
+  cie-team:
     role: admin
-    environments: 
+    environments:
       - dev
       - test
     resources:
       - ServiceBusTopic
     approval_required: false
-    
-  DEV-Team:
+
+  epo-team:
     role: contributor
     environments:
       - dev
@@ -16,9 +16,8 @@ teams:
     resources:
       - ServiceBusTopic
     approval_required:
-      dev: false
-      test: true
-      prod: true
+      dev: true
+      test: false
     limitations:
       ServiceBusTopic:
         maxSizeInMegabytes: 1024
