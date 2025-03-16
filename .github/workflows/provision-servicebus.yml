@@ -94,12 +94,10 @@ jobs:
           
           # Create tfvars file if workflow_dispatch
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            cat > terraform.tfvars <<EOF
-resource_name = "${{ github.event.inputs.resourceName }}"
-message_retention = ${{ github.event.inputs.messageRetention }}
-max_size_mb = ${{ github.event.inputs.maxSizeInMegabytes }}
-requires_duplicate_detection = ${{ github.event.inputs.requiresDuplicateDetection == 'true' }}
-EOF
+            echo 'resource_name = "${{ github.event.inputs.resourceName }}"' > terraform.tfvars
+            echo 'message_retention = ${{ github.event.inputs.messageRetention }}' >> terraform.tfvars
+            echo 'max_size_mb = ${{ github.event.inputs.maxSizeInMegabytes }}' >> terraform.tfvars
+            echo 'requires_duplicate_detection = ${{ github.event.inputs.requiresDuplicateDetection == "true" }}' >> terraform.tfvars
           fi
           
           # Apply with auto-approve
@@ -115,4 +113,3 @@ EOF
             
             **Environment:** ${{ github.event.inputs.environment || 'dev' }}
             **Resource Name:** ${{ github.event.inputs.resourceName }}
-            
