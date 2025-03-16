@@ -1,193 +1,146 @@
-// Direct GitHub authentication without Azure Function intermediate
-// Save this as auth-direct.js
+// Improved auth using GitHub Personal Access Token with storage fallbacks
+// Save this as /infra-self-service/js/auth.js
 
-// GitHub OAuth App credentials
-const clientId = 'Ov23liiDQOjHrrvxTrVl';
-const redirectUri = 'https://labenagha.github.io/infra-self-service/auth/github/callback';
+// Storage utility functions with fallbacks
+const storage = {
+    token: null, // In-memory fallback
+    
+    getItem: function(key) {
+        try {
+            // Try session storage first
+            return sessionStorage.getItem(key);
+        } catch (e) {
+            console.warn('Session storage access failed, using in-memory fallback:', e);
+            // Fallback to in-memory
+            return this.token;
+        }
+    },
+    
+    setItem: function(key, value) {
+        try {
+            // Try session storage first
+            sessionStorage.setItem(key, value);
+        } catch (e) {
+            console.warn('Session storage access failed, using in-memory fallback:', e);
+        }
+        // Always set in-memory as well
+        this.token = value;
+    },
+    
+    removeItem: function(key) {
+        try {
+            // Try session storage first
+            sessionStorage.removeItem(key);
+        } catch (e) {
+            console.warn('Session storage access failed:', e);
+        }
+        // Always clear in-memory
+        this.token = null;
+    }
+};
 
-// Check for existing token in session storage
-let token = sessionStorage.getItem('github_token');
+// Get token from storage
+let token = storage.getItem('github_token');
 let userPermissions = null;
 
 // DOM elements
-const loginButton = document.getElementById('login-button');
-const logoutButton = document.getElementById('logout-button');
-const usernameElement = document.getElementById('username');
-const loadingElement = document.getElementById('loading');
-const resourceSelector = document.getElementById('resource-selector');
-const resultMessage = document.getElementById('result-message');
+let loginButton, logoutButton, usernameElement, loadingElement, resourceSelector, resultMessage;
 
 // Initialize the application
 function init() {
-    console.log("Initializing auth-direct.js");
+    console.log("Initializing improved PAT auth");
     
-    // Check if we're on the callback URL with a fresh code
-    const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get('code');
-    const state = urlParams.get('state');
-    const savedState = sessionStorage.getItem('github_oauth_state');
-    
-    console.log("Current URL:", window.location.href);
-    console.log("Have code in URL:", !!code);
-    console.log("Have state in URL:", !!state);
-    console.log("Have saved state:", !!savedState);
-    console.log("Have token in session:", !!token);
-    
-    if (code) {
-        console.log("OAuth code detected:", code.substring(0, 5) + "...");
+    // Get DOM elements safely
+    try {
+        loginButton = document.getElementById('login-button');
+        logoutButton = document.getElementById('logout-button');
+        usernameElement = document.getElementById('username');
+        loadingElement = document.getElementById('loading');
+        resourceSelector = document.getElementById('resource-selector');
+        resultMessage = document.getElementById('result-message');
         
-        // Validate state if provided
-        if (state && savedState && state !== savedState) {
-            console.error("State mismatch, possible CSRF attack");
-            showError("Security error: State parameter mismatch");
+        // Check for missing elements
+        if (!loginButton || !logoutButton || !usernameElement || !loadingElement || !resourceSelector || !resultMessage) {
+            console.error("Required DOM elements not found. Make sure your HTML includes all needed elements.");
             return;
         }
-        
-        // Clean URL without affecting history state
+    } catch (e) {
+        console.error("Error accessing DOM elements:", e);
+        return;
+    }
+    
+    // Handle callback script that might have saved a code
+    const savedCode = storage.getItem('github_auth_code');
+    if (savedCode) {
+        // Clear it immediately since we won't be using it
+        storage.removeItem('github_auth_code');
+        // Inform the user we're switching to PAT-based authentication
+        showMessage('We\'ve updated our authentication method. Please use a GitHub Personal Access Token instead.', 'info');
+    }
+    
+    // Clear any OAuth code from URL if present (from previous attempts)
+    if (window.location.search.includes('code=')) {
         const url = new URL(window.location.href);
         url.search = '';
         window.history.replaceState({}, document.title, url.toString());
-        
-        // Clear saved state
-        sessionStorage.removeItem('github_oauth_state');
-        
-        // IMPORTANT: We can't directly exchange the code for a token from the frontend
-        // Instead, instruct the user what to do next with the code
-        showCodeExchangeGuide(code);
-    } else if (token) {
+    }
+    
+    if (token) {
         // We already have a token
-        console.log("Found existing token in session storage");
+        console.log("Found existing token");
         showLoggedInState();
         fetchUserData();
     } else {
         // Not logged in
         console.log("No token found, showing logged out state");
         showLoggedOutState();
+        // Don't immediately show the form - wait for the user to click login
     }
 
     // Set up event listeners
-    loginButton.addEventListener('click', initiateLogin);
+    loginButton.addEventListener('click', () => showTokenInputForm());
     logoutButton.addEventListener('click', logout);
-    
-    // Add a token input form in the UI
-    createTokenInputForm();
 }
 
-// Start the login process
-function initiateLogin() {
-    console.log("Initiating login process");
-    
-    // Generate a state parameter for security
-    const state = Math.random().toString(36).substring(2, 15);
-    sessionStorage.setItem('github_oauth_state', state);
-    console.log("Generated state:", state);
-    
-    // Build authorization URL with all required parameters
-    const authUrl = `https://github.com/login/oauth/authorize?` +
-        `client_id=${encodeURIComponent(clientId)}` +
-        `&redirect_uri=${encodeURIComponent(redirectUri)}` +
-        `&scope=${encodeURIComponent('repo read:org')}` +
-        `&state=${encodeURIComponent(state)}`;
-    
-    console.log("Redirecting to GitHub:", authUrl);
-    window.location.href = authUrl;
-}
-
-// Show guide for manual code exchange
-function showCodeExchangeGuide(code) {
-    console.log("Showing code exchange guide");
-    showLoading(false);
-    
+// Show the token input form
+function showTokenInputForm() {
     resultMessage.innerHTML = `
-        <div class="code-exchange-guide">
-            <h3>Authentication Code Received</h3>
-            <p>We received an authentication code from GitHub, but we need your help to complete the process:</p>
+        <div class="token-form">
+            <h3>Enter GitHub Personal Access Token</h3>
+            <p>To use this application, you need a GitHub Personal Access Token with the following scopes:</p>
+            <ul>
+                <li><code>repo</code> - To access your repositories</li>
+                <li><code>read:org</code> - To read your organization and team membership</li>
+            </ul>
             
-            <div class="code-display">
-                <code>${code}</code>
-                <button id="copy-code-button" class="btn">Copy Code</button>
-            </div>
-            
-            <p>Please follow these steps:</p>
             <ol>
-                <li>Go to <a href="https://github.com/settings/developers" target="_blank">GitHub Developer Settings</a></li>
-                <li>Open your OAuth App (custom-self-service-tool)</li>
-                <li>Use the code above with your client secret to get an access token</li>
-                <li>Come back and enter the access token below</li>
+                <li>Go to <a href="https://github.com/settings/tokens/new" target="_blank">GitHub Personal Access Tokens</a></li>
+                <li>Enter a note like "Infrastructure Self-Service Tool"</li>
+                <li>Select the <code>repo</code> and <code>read:org</code> scopes</li>
+                <li>Click "Generate token"</li>
+                <li>Copy the generated token and paste it below</li>
             </ol>
             
             <div class="token-input">
-                <label for="access-token">Access Token:</label>
-                <input type="text" id="access-token" placeholder="Paste your access token here">
-                <button id="submit-token-button" class="btn">Submit Token</button>
+                <input type="text" id="pat-input" placeholder="Paste your GitHub Personal Access Token here">
+                <button id="submit-pat-button" class="btn">Login</button>
             </div>
         </div>
     `;
     
-    // Set up event listeners
-    document.getElementById('copy-code-button').addEventListener('click', () => {
-        navigator.clipboard.writeText(code);
-        document.getElementById('copy-code-button').textContent = 'Copied!';
-    });
-    
-    document.getElementById('submit-token-button').addEventListener('click', () => {
-        const tokenInput = document.getElementById('access-token');
-        const inputToken = tokenInput.value.trim();
+    document.getElementById('submit-pat-button').addEventListener('click', () => {
+        const patInput = document.getElementById('pat-input');
+        const inputToken = patInput.value.trim();
         
         if (inputToken) {
             // Store the token and proceed
-            sessionStorage.setItem('github_token', inputToken);
+            storage.setItem('github_token', inputToken);
             token = inputToken;
+            resultMessage.innerHTML = '';
             showLoggedInState();
             fetchUserData();
         } else {
-            tokenInput.classList.add('error');
-        }
-    });
-}
-
-// Create a simple form for directly inputting an access token
-function createTokenInputForm() {
-    const tokenForm = document.createElement('div');
-    tokenForm.id = 'token-input-form';
-    tokenForm.style.display = 'none';
-    tokenForm.innerHTML = `
-        <h3>Enter GitHub Access Token</h3>
-        <p>If you already have a GitHub personal access token, you can enter it directly:</p>
-        <div class="token-input">
-            <input type="text" id="direct-access-token" placeholder="Paste your GitHub access token">
-            <button id="direct-submit-token" class="btn">Use Token</button>
-        </div>
-    `;
-    
-    document.body.appendChild(tokenForm);
-    
-    // Add a link to show the form
-    const tokenLink = document.createElement('a');
-    tokenLink.href = '#';
-    tokenLink.textContent = 'Use existing token';
-    tokenLink.style.marginLeft = '10px';
-    tokenLink.addEventListener('click', (e) => {
-        e.preventDefault();
-        document.getElementById('token-input-form').style.display = 'block';
-    });
-    
-    loginButton.parentNode.appendChild(tokenLink);
-    
-    // Set up the submission handler
-    document.getElementById('direct-submit-token').addEventListener('click', () => {
-        const tokenInput = document.getElementById('direct-access-token');
-        const inputToken = tokenInput.value.trim();
-        
-        if (inputToken) {
-            // Store the token and proceed
-            sessionStorage.setItem('github_token', inputToken);
-            token = inputToken;
-            document.getElementById('token-input-form').style.display = 'none';
-            showLoggedInState();
-            fetchUserData();
-        } else {
-            tokenInput.classList.add('error');
+            patInput.classList.add('error');
         }
     });
 }
@@ -198,23 +151,28 @@ async function fetchUserData() {
     
     try {
         // Fetch user information
+        console.log("Fetching user data from GitHub API");
         const userResponse = await fetch('https://api.github.com/user', {
             headers: { Authorization: `token ${token}` }
         });
         
         if (!userResponse.ok) {
+            console.error("GitHub API returned error:", userResponse.status);
             throw new Error('Failed to fetch user data');
         }
         
         const user = await userResponse.json();
         usernameElement.textContent = user.login;
+        console.log("Authenticated as:", user.login);
         
         // Fetch user's teams
+        console.log("Fetching teams data from GitHub API");
         const teamsResponse = await fetch('https://api.github.com/user/teams', {
             headers: { Authorization: `token ${token}` }
         });
         
         if (!teamsResponse.ok) {
+            console.error("GitHub Teams API returned error:", teamsResponse.status);
             throw new Error('Failed to fetch teams data');
         }
         
@@ -244,9 +202,10 @@ async function fetchUserData() {
         if (error.message.includes('401') || error.message.includes('Failed to fetch')) {
             console.log('Invalid token, logging out');
             logout();
+            showError('Invalid token. Please ensure your Personal Access Token has the required scopes (repo, read:org).');
+        } else {
+            showError('Failed to load user data. Please try again.');
         }
-        
-        showError('Failed to load user data. Please try again.');
     } finally {
         hideLoading();
     }
@@ -267,7 +226,8 @@ function loadPermissions() {
     }
     
     // Fetch from your GH Pages site
-    fetch('https://labenagha.github.io/infra-self-service/config/permissions.yml')
+    console.log("Loading permissions from YAML file");
+    fetch('/infra-self-service/config/permissions.yml')
         .then(response => {
             if (!response.ok) {
                 throw new Error(`Unable to fetch permissions file: ${response.status} ${response.statusText}`);
@@ -276,24 +236,34 @@ function loadPermissions() {
         })
         .then(yamlText => {
             const permissions = jsyaml.load(yamlText);
+            console.log("Permissions loaded:", permissions);
             // Call the resource option loader from forms.js with the permissions object
-            loadResourceOptions(permissions);
+            if (typeof loadResourceOptions === 'function') {
+                loadResourceOptions(permissions);
+            } else {
+                console.error('loadResourceOptions function not found, make sure forms.js is loaded');
+            }
         })
         .catch(error => {
             console.error('Error loading permissions file:', error);
+            showError('Failed to load permissions configuration. Please try again later.');
         });
 }
 
 // Log the user out
 function logout() {
-    sessionStorage.removeItem('github_token');
+    storage.removeItem('github_token');
     token = null;
     userPermissions = null;
     
     // Reset UI state
     showLoggedOutState();
-    document.getElementById('resource-selector').style.display = 'none';
-    document.getElementById('resource-form-container').style.display = 'none';
+    if (document.getElementById('resource-selector')) {
+        document.getElementById('resource-selector').style.display = 'none';
+    }
+    if (document.getElementById('resource-form-container')) {
+        document.getElementById('resource-form-container').style.display = 'none';
+    }
     resultMessage.textContent = '';
 }
 
@@ -310,11 +280,6 @@ function showLoggedOutState() {
 }
 
 function showLoading(message = 'Loading...') {
-    if (message === false) {
-        loadingElement.style.display = 'none';
-        return;
-    }
-    
     loadingElement.innerHTML = `
         <svg width="38" height="38" viewBox="0 0 38 38" xmlns="http://www.w3.org/2000/svg" stroke="#0e639c">
             <g fill="none" fill-rule="evenodd">
@@ -346,9 +311,26 @@ function showError(message) {
     
     document.getElementById('try-again-button')?.addEventListener('click', () => {
         resultMessage.innerHTML = '';
-        showLoggedOutState();
+        showTokenInputForm();
     });
 }
 
-// Initialize the application
-init();
+function showMessage(message, type = 'info') {
+    resultMessage.innerHTML = `
+        <div class="message ${type}-message">
+            <p>${message}</p>
+            <button id="close-message-button" class="btn">OK</button>
+        </div>
+    `;
+    
+    document.getElementById('close-message-button')?.addEventListener('click', () => {
+        resultMessage.innerHTML = '';
+    });
+}
+
+// Initialize the application when the document is ready
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    setTimeout(init, 100); // Short delay to ensure DOM is fully available
+} else {
+    document.addEventListener('DOMContentLoaded', init);
+}

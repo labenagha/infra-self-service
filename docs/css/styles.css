@@ -221,6 +221,97 @@
   .success-message a:hover {
     text-decoration: underline;
   }
+
+  /* Token input form styling - add to your existing styles.css */
+
+.token-form {
+  background-color: white;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 2rem;
+  margin: 2rem 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.token-form h3 {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--text-color);
+  margin-bottom: 1rem;
+}
+
+.token-form ul, .token-form ol {
+  margin-left: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.token-form li {
+  margin-bottom: 0.5rem;
+}
+
+.token-form code {
+  background-color: var(--secondary-color);
+  padding: 0.2rem 0.4rem;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 0.9em;
+  color: var(--primary-color);
+}
+
+.token-input {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  align-items: center;
+}
+
+.token-input input {
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.token-input input.error {
+  border-color: var(--error-color);
+  box-shadow: 0 0 0 2px rgba(211, 47, 47, 0.1);
+}
+
+/* Message styling */
+.message {
+  border-radius: 4px;
+  padding: 1.5rem;
+  margin: 2rem 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.info-message {
+  background-color: rgba(14, 99, 156, 0.05);
+  border: 1px solid rgba(14, 99, 156, 0.2);
+  border-left: 4px solid var(--primary-color);
+}
+
+/* The following overrides are optional - to ensure consistency */
+#submit-pat-button {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+#submit-pat-button:hover {
+  background-color: var(--primary-hover);
+}
+
+#try-again-button, #close-message-button {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+#try-again-button:hover, #close-message-button:hover {
+  background-color: var(--primary-hover);
+}
   
   /* Responsive adjustments */
   @media (max-width: 768px) {
