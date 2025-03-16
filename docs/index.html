@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Infrastructure Self-Service Portal</title>
+    <title>Tandem Diabetes Care - Infrastructure Self-Service Portal</title>
     <link rel="stylesheet" href="/infra-self-service/css/styles.css" />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
     <script>
@@ -42,13 +42,69 @@
     </header>
 
     <main>
+      <div class="hero-section">
+        <div class="hero-content">
+          <h2>Welcome to the Infrastructure Self-Service Portal</h2>
+          <p>
+            Easily provision and manage infrastructure resources with our self-service platform. 
+            Streamline your workflow by creating and configuring resources without waiting for IT assistance.
+          </p>
+          <button id="get-started-button">Get Started</button>
+        </div>
+      </div>
+
+      <div class="cards-grid">
+        <div class="card">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+              <polyline points="7.5 4.21 12 6.81 16.5 4.21"></polyline>
+              <polyline points="7.5 19.79 7.5 14.6 3 12"></polyline>
+              <polyline points="21 12 16.5 14.6 16.5 19.79"></polyline>
+              <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+              <line x1="12" y1="22.08" x2="12" y2="12"></line>
+            </svg>
+          </div>
+          <h3>Service Bus</h3>
+          <p>Create and manage service bus namespaces, topics, and subscriptions for reliable messaging.</p>
+          <button class="service-button">Create Service Bus</button>
+        </div>
+        
+        <div class="card">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+              <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+              <line x1="6" y1="6" x2="6" y2="6"></line>
+              <line x1="6" y1="18" x2="6" y2="18"></line>
+            </svg>
+          </div>
+          <h3>Virtual Machines</h3>
+          <p>Deploy and configure virtual machines with predefined templates and settings.</p>
+          <button class="vm-button">Create VM</button>
+        </div>
+        
+        <div class="card">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+              <path d="M2 17l10 5 10-5"></path>
+              <path d="M2 12l10 5 10-5"></path>
+            </svg>
+          </div>
+          <h3>Storage Accounts</h3>
+          <p>Create and manage storage accounts for your application data needs.</p>
+          <button class="storage-button">Create Storage</button>
+        </div>
+      </div>
+
       <div id="loading" style="display: none">
         <svg
           width="38"
           height="38"
           viewBox="0 0 38 38"
           xmlns="http://www.w3.org/2000/svg"
-          stroke="#0e639c"
+          stroke="#00678e"
         >
           <g fill="none" fill-rule="evenodd">
             <g transform="translate(1 1)" stroke-width="2">
@@ -70,7 +126,9 @@
 
       <div id="resource-selector" style="display: none">
         <h2>Select Resource Type</h2>
-        <div id="resource-buttons"></div>
+        <div id="resource-buttons">
+          <!-- Resource buttons will be added here by JavaScript -->
+        </div>
       </div>
 
       <div id="resource-form-container" style="display: none">
@@ -89,8 +147,16 @@
 
     <footer>
       <div class="footer-content">
-        <img src="/docs/assets/tandem-logo.png" alt="Tandem Diabetes Care Logo" class="footer-logo" />
-        <p>&copy; 2025 Tandem Diabetes Care. All rights reserved.</p>
+        <div class="footer-info">
+          <img src="/docs/assets/tandem-logo.png" alt="Tandem Diabetes Care Logo" class="footer-logo" />
+          <p>&copy; 2025 Tandem Diabetes Care. All rights reserved.</p>
+        </div>
+        <div class="footer-links">
+          <a href="#">Documentation</a>
+          <a href="#">Support</a>
+          <a href="#">Privacy Policy</a>
+          <a href="#">Terms of Service</a>
+        </div>
       </div>
     </footer>
 
@@ -126,7 +192,22 @@
           </div>
         `;
       });
+
+      // Add functionality for the Get Started button
+      document.getElementById("get-started-button").addEventListener("click", function() {
+        const resourceSelector = document.getElementById("resource-selector");
+        resourceSelector.style.display = "block";
+        resourceSelector.scrollIntoView({ behavior: "smooth" });
+      });
+
+      // Card buttons functionality
+      document.querySelectorAll(".card button").forEach(button => {
+        button.addEventListener("click", function() {
+          const resourceSelector = document.getElementById("resource-selector");
+          resourceSelector.style.display = "block";
+          resourceSelector.scrollIntoView({ behavior: "smooth" });
+        });
+      });
     </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
   </body>
 </html>
