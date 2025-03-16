@@ -27,7 +27,7 @@
     <!-- Header -->
     <header class="site-header">
       <div class="header-container">
-        <img src="/docs/assets/tandem-logo.png" alt="Tandem Diabetes Care Logo" class="header-logo" />
+        <img src="/docs/assets/tandem-diabetes-logo.png" alt="Tandem Diabetes Care Logo" class="header-logo" />
         <h1 class="header-title">Tandem Internal Tools</h1>
       </div>
     </header>
@@ -35,7 +35,7 @@
     <!-- Main content -->
     <div class="login-container">
       <div class="login-branding">
-        <img src="/docs/assets/tandem-logo.png" alt="Tandem Diabetes Care Logo" class="logo" />
+        <img src="/docs/assets/tandem-diabetes-logo.png" alt="Tandem Diabetes Care Logo" class="logo" />
         <h1>Infrastructure Self-Service Portal</h1>
         <p class="tagline">Streamlined infrastructure management for Tandem Diabetes Care</p>
       </div>
@@ -90,6 +90,294 @@
         const token = document.getElementById("pat-input").value;
         if (token) {
           // Store token and redirect to main page
+          sessionStorage.setItem("github_token", token);
+          window.location.href = "/infra-self-service/dashboard.html";
+        } else {
+          alert("Please enter a valid token");
+        }
+      });
+    </script>
+  </body>
+</html><!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tandem Infrastructure Self-Service - Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --tandem-blue: #00678e;
+        --tandem-blue-light: #007fad;
+        --background-color: #f5f7fa;
+        --text-color: #333;
+        --border-color: #e0e4e8;
+      }
+      
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      
+      body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        line-height: 1.6;
+        color: var(--text-color);
+        background-color: var(--background-color);
+        margin: 0;
+      }
+      
+      /* Sticky header */
+      .site-header {
+        background-color: white;
+        border-bottom: 1px solid var(--border-color);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+      
+      .header-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 1rem 2rem;
+        display: flex;
+        align-items: center;
+      }
+      
+      .header-logo {
+        height: 40px;
+        width: auto;
+        margin-right: 1rem;
+      }
+      
+      .header-title {
+        font-size: 1.2rem;
+        font-weight: 500;
+        color: var(--tandem-blue);
+      }
+      
+      /* Login container */
+      .login-container {
+        max-width: 1200px;
+        margin: 2rem auto;
+        padding: 0 2rem;
+        display: flex;
+        gap: 2rem;
+      }
+      
+      .login-branding {
+        flex: 1;
+        background-color: white;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+      }
+      
+      .logo {
+        height: 60px;
+        width: auto;
+        margin-bottom: 1.5rem;
+      }
+      
+      .login-branding h1 {
+        font-size: 1.75rem;
+        font-weight: 600;
+        color: var(--tandem-blue);
+        margin-bottom: 1rem;
+      }
+      
+      .tagline {
+        color: #666;
+        font-size: 1rem;
+      }
+      
+      .login-form-container {
+        flex: 1;
+        background-color: white;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+      
+      .login-form h2 {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+        color: var(--text-color);
+      }
+      
+      .scope-list {
+        margin-left: 1.5rem;
+        margin-bottom: 1.5rem;
+      }
+      
+      .scope-list li {
+        margin-bottom: 0.5rem;
+      }
+      
+      .token-instructions {
+        background-color: rgba(0, 103, 142, 0.05);
+        border-radius: 6px;
+        padding: 1.25rem;
+        margin: 1.5rem 0;
+      }
+      
+      .token-instructions h3 {
+        font-size: 1rem;
+        margin-bottom: 0.75rem;
+        color: var(--tandem-blue);
+      }
+      
+      .token-instructions ol {
+        margin-left: 1.5rem;
+      }
+      
+      .token-instructions li {
+        margin-bottom: 0.5rem;
+      }
+      
+      code {
+        background-color: #f0f2f5;
+        padding: 0.2rem 0.4rem;
+        border-radius: 3px;
+        font-family: monospace;
+        font-size: 0.9em;
+        color: var(--tandem-blue);
+      }
+      
+      .token-input {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1.5rem;
+        margin-bottom: 1.5rem;
+      }
+      
+      .token-input input {
+        flex: 1;
+        padding: 0.75rem;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        font-size: 0.95rem;
+      }
+      
+      .token-input input:focus {
+        outline: none;
+        border-color: var(--tandem-blue);
+        box-shadow: 0 0 0 2px rgba(0, 103, 142, 0.1);
+      }
+      
+      button {
+        background-color: var(--tandem-blue);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 0.75rem 1.25rem;
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+      
+      button:hover {
+        background-color: var(--tandem-blue-light);
+      }
+      
+      .login-note {
+        font-size: 0.85rem;
+        color: #666;
+        text-align: center;
+      }
+      
+      /* Footer */
+      .footer {
+        text-align: center;
+        padding: 2rem;
+        color: #666;
+        font-size: 0.9rem;
+        margin-top: 3rem;
+        border-top: 1px solid var(--border-color);
+      }
+      
+      /* Responsive */
+      @media (max-width: 768px) {
+        .login-container {
+          flex-direction: column;
+        }
+      }
+    </style>
+    <script>
+      (function () {
+        if (window.location.search.includes("code=")) {
+          const urlParams = new URLSearchParams(window.location.search);
+          const code = urlParams.get("code");
+          if (code) {
+            sessionStorage.setItem("github_auth_code", code);
+          }
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <!-- Sticky Header -->
+    <header class="site-header">
+      <div class="header-container">
+        <img src="/docs/assets/tandem-diabetes-logo.png" alt="Tandem Diabetes Care Logo" class="header-logo" />
+        <h1 class="header-title">Tandem Internal Tools</h1>
+      </div>
+    </header>
+
+    <!-- Main content -->
+    <div class="login-container">
+      <div class="login-branding">
+        <img src="/docs/assets/tandem-diabetes-logo.png" alt="Tandem Diabetes Care Logo" class="logo" />
+        <h1>Infrastructure Self-Service Portal</h1>
+        <p class="tagline">Streamlined infrastructure management for Tandem Diabetes Care</p>
+      </div>
+      
+      <div class="login-form-container">
+        <div class="login-form">
+          <h2>Login to Access</h2>
+          <p>To use this application, you need a GitHub Personal Access Token with the following scopes:</p>
+          <ul class="scope-list">
+            <li><code>repo</code> - Full control of private repositories</li>
+            <li><code>workflow</code> - Permission to trigger GitHub Actions workflows</li>
+            <li><code>read:org</code> - To verify organization and team membership</li>
+          </ul>
+
+          <div class="token-instructions">
+            <h3>How to generate a token:</h3>
+            <ol>
+              <li>Go to <a href="https://github.com/settings/tokens/new" target="_blank">GitHub Personal Access Tokens</a></li>
+              <li>Enter a note like "Infrastructure Self-Service Tool"</li>
+              <li>Select the required scopes listed above</li>
+              <li>Click "Generate token"</li>
+              <li>Copy the generated token and paste it below</li>
+            </ol>
+          </div>
+
+          <div class="token-input">
+            <input type="text" id="pat-input" placeholder="Paste your GitHub Personal Access Token here">
+            <button id="submit-pat-button">Login</button>
+          </div>
+          
+          <p class="login-note">Token is securely transmitted and not stored permanently.</p>
+        </div>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <p>&copy; 2025 Tandem Diabetes Care. All rights reserved.</p>
+    </footer>
+
+    <script>
+      document.getElementById("submit-pat-button").addEventListener("click", function() {
+        const token = document.getElementById("pat-input").value;
+        if (token) {
           sessionStorage.setItem("github_token", token);
           window.location.href = "/infra-self-service/dashboard.html";
         } else {
