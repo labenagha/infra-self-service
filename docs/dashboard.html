@@ -8,44 +8,118 @@
     <link rel="stylesheet" href="/infra-self-service/css/styles.css" />
   </head>
   <body>
-    <header>
-      <div class="header-content">
-        <img src="/docs/assets/tandem-logo.jpeg" alt="Tandem Diabetes Care Logo" class="logo" />
-        <h1>Infrastructure Self-Service Portal</h1>
-      </div>
-      <div class="user-info">
-        <span id="username">Loading user...</span>
-        <button id="logout-button">Logout</button>
+    <!-- Header -->
+    <header class="site-header">
+      <div class="header-container">
+        <img src="/docs/assets/tandem-logo.png" alt="Tandem Diabetes Care Logo" class="header-logo" />
+        <h1 class="header-title">Tandem Internal Tools</h1>
       </div>
     </header>
 
-    <main>
-      <section class="welcome-section">
-        <h2>Welcome to Self-Service Infrastructure</h2>
-        <p>Select a resource type below to provision new infrastructure components.</p>
-      </section>
+    <!-- Main app header -->
+    <div class="app-header">
+      <div class="app-header-container">
+        <div class="app-info">
+          <h1>Infrastructure Self-Service Portal</h1>
+          <p class="app-description">Create and manage infrastructure resources</p>
+        </div>
+        <div class="user-info">
+          <span id="username">Authenticated User</span>
+          <button id="logout-button">Logout</button>
+        </div>
+      </div>
+    </div>
 
-      <section class="resource-section">
-        <div class="resource-tiles">
-          <div class="resource-tile">
+    <!-- Main content -->
+    <main class="main-content">
+      <div class="page-controls">
+        <div class="search-box">
+          <input type="text" placeholder="Search resources..." id="resource-search">
+        </div>
+        <div class="view-controls">
+          <button class="view-button active" data-view="grid">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="7" height="7"></rect>
+              <rect x="14" y="3" width="7" height="7"></rect>
+              <rect x="14" y="14" width="7" height="7"></rect>
+              <rect x="3" y="14" width="7" height="7"></rect>
+            </svg>
+            Grid
+          </button>
+          <button class="view-button" data-view="list">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="8" y1="6" x2="21" y2="6"></line>
+              <line x1="8" y1="12" x2="21" y2="12"></line>
+              <line x1="8" y1="18" x2="21" y2="18"></line>
+              <line x1="3" y1="6" x2="3.01" y2="6"></line>
+              <line x1="3" y1="12" x2="3.01" y2="12"></line>
+              <line x1="3" y1="18" x2="3.01" y2="18"></line>
+            </svg>
+            List
+          </button>
+        </div>
+      </div>
+
+      <div class="resources-container grid-view" id="resources-container">
+        <!-- Page 1 -->
+        <div class="resource-page active" data-page="1">
+          <div class="resource-card">
             <h3>Virtual Machines</h3>
             <p>Deploy and configure virtual machines with predefined templates.</p>
             <button class="resource-button" data-resource="vm">Create VM</button>
           </div>
           
-          <div class="resource-tile">
+          <div class="resource-card">
             <h3>Storage Accounts</h3>
             <p>Create and manage storage accounts for your application data.</p>
             <button class="resource-button" data-resource="storage">Create Storage</button>
           </div>
           
-          <div class="resource-tile">
+          <div class="resource-card">
             <h3>Service Bus</h3>
             <p>Set up messaging services for your applications.</p>
             <button class="resource-button" data-resource="servicebus">Create Service Bus</button>
           </div>
+          
+          <div class="resource-card">
+            <h3>Kubernetes Clusters</h3>
+            <p>Deploy and manage containerized applications at scale.</p>
+            <button class="resource-button" data-resource="kubernetes">Create Cluster</button>
+          </div>
         </div>
-      </section>
+        
+        <!-- Page 2 -->
+        <div class="resource-page" data-page="2">
+          <div class="resource-card">
+            <h3>API Management</h3>
+            <p>Create and publish APIs for developers and partners.</p>
+            <button class="resource-button" data-resource="apim">Create API</button>
+          </div>
+          
+          <div class="resource-card">
+            <h3>SQL Databases</h3>
+            <p>Set up and configure SQL databases for your applications.</p>
+            <button class="resource-button" data-resource="sql">Create Database</button>
+          </div>
+          
+          <div class="resource-card">
+            <h3>Web Apps</h3>
+            <p>Deploy and host web applications quickly and easily.</p>
+            <button class="resource-button" data-resource="webapp">Create Web App</button>
+          </div>
+          
+          <div class="resource-card">
+            <h3>Function Apps</h3>
+            <p>Build serverless applications with event-driven code.</p>
+            <button class="resource-button" data-resource="function">Create Function</button>
+          </div>
+        </div>
+      </div>
+      
+      <div class="pagination">
+        <button class="page-button active" data-page="1">1</button>
+        <button class="page-button" data-page="2">2</button>
+      </div>
 
       <div id="loading" style="display: none">
         <div class="loader"></div>
@@ -57,7 +131,9 @@
           <button id="close-form" class="close-button">&times;</button>
         </div>
         <form id="resource-form">
-          <div id="form-fields"></div>
+          <div id="form-fields">
+            <!-- Form fields will be loaded here based on resource type -->
+          </div>
           <div id="environment-selector"></div>
           <div class="form-actions">
             <button type="button" id="cancel-form">Cancel</button>
@@ -69,8 +145,16 @@
       <div id="result-message"></div>
     </main>
 
-    <footer>
-      <p>&copy; 2025 Tandem Diabetes Care. All rights reserved.</p>
+    <!-- Footer -->
+    <footer class="site-footer">
+      <div class="footer-container">
+        <p>&copy; 2025 Tandem Diabetes Care. All rights reserved.</p>
+        <div class="footer-links">
+          <a href="#">Privacy Policy</a>
+          <a href="#">Terms of Service</a>
+          <a href="#">Contact Support</a>
+        </div>
+      </div>
     </footer>
 
     <script src="/infra-self-service/js/service-bus-form.js"></script>
@@ -84,9 +168,6 @@
         if (!token) {
           // Redirect to login page if no token
           window.location.href = "/infra-self-service/index.html";
-        } else {
-          // Display username (in a real app, you would fetch this from GitHub API)
-          document.getElementById("username").textContent = "Authenticated User";
         }
       });
 
@@ -96,15 +177,188 @@
         window.location.href = "/infra-self-service/index.html";
       });
 
+      // Switch between grid and list views
+      document.querySelectorAll('.view-button').forEach(button => {
+        button.addEventListener('click', function() {
+          document.querySelectorAll('.view-button').forEach(btn => btn.classList.remove('active'));
+          this.classList.add('active');
+          
+          const view = this.getAttribute('data-view');
+          const container = document.getElementById('resources-container');
+          
+          if (view === 'grid') {
+            container.classList.remove('list-view');
+            container.classList.add('grid-view');
+          } else {
+            container.classList.remove('grid-view');
+            container.classList.add('list-view');
+          }
+        });
+      });
+
+      // Pagination functionality
+      document.querySelectorAll('.page-button').forEach(button => {
+        button.addEventListener('click', function() {
+          const pageNumber = this.getAttribute('data-page');
+          
+          // Update active page button
+          document.querySelectorAll('.page-button').forEach(btn => btn.classList.remove('active'));
+          this.classList.add('active');
+          
+          // Show active page
+          document.querySelectorAll('.resource-page').forEach(page => {
+            page.classList.remove('active');
+            if (page.getAttribute('data-page') === pageNumber) {
+              page.classList.add('active');
+            }
+          });
+          
+          // Scroll to top of resource container
+          document.getElementById('resources-container').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      });
+
+      // Resource search functionality
+      document.getElementById('resource-search').addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        const resourceCards = document.querySelectorAll('.resource-card');
+        
+        resourceCards.forEach(card => {
+          const title = card.querySelector('h3').textContent.toLowerCase();
+          const description = card.querySelector('p').textContent.toLowerCase();
+          
+          if (title.includes(searchTerm) || description.includes(searchTerm)) {
+            card.style.display = 'block';
+          } else {
+            card.style.display = 'none';
+          }
+        });
+      });
+
       // Resource buttons functionality
       document.querySelectorAll(".resource-button").forEach(button => {
         button.addEventListener("click", function() {
           const resourceType = this.parentElement.querySelector("h3").textContent;
           document.getElementById("form-title").textContent = `Create ${resourceType}`;
+          
+          // Clear previous form fields
+          document.getElementById("form-fields").innerHTML = "";
+          
+          // Load form fields based on resource type
+          const resourceId = this.getAttribute('data-resource');
+          loadFormFields(resourceId);
+          
+          // Show form container
           document.getElementById("resource-form-container").style.display = "block";
-          // In a real implementation, you would load the appropriate form fields based on the resource type
+          document.getElementById("resource-form-container").scrollIntoView({ behavior: "smooth" });
         });
       });
+
+      // Function to load form fields based on resource type
+      function loadFormFields(resourceId) {
+        const formFields = document.getElementById("form-fields");
+        
+        // Clear existing fields
+        formFields.innerHTML = "";
+        
+        // Common fields for all resources
+        const nameField = createFormField('name', 'Name', 'text', 'Enter a name for this resource');
+        formFields.appendChild(nameField);
+        
+        // Resource-specific fields
+        switch(resourceId) {
+          case 'vm':
+            formFields.appendChild(createFormField('size', 'VM Size', 'select', '', [
+              { value: 'small', text: 'Small (2 vCPU, 4GB RAM)' },
+              { value: 'medium', text: 'Medium (4 vCPU, 8GB RAM)' },
+              { value: 'large', text: 'Large (8 vCPU, 16GB RAM)' }
+            ]));
+            formFields.appendChild(createFormField('os', 'Operating System', 'select', '', [
+              { value: 'windows', text: 'Windows Server 2022' },
+              { value: 'ubuntu', text: 'Ubuntu 22.04 LTS' },
+              { value: 'rhel', text: 'Red Hat Enterprise Linux 9' }
+            ]));
+            break;
+            
+          case 'storage':
+            formFields.appendChild(createFormField('type', 'Storage Type', 'select', '', [
+              { value: 'blob', text: 'Blob Storage' },
+              { value: 'file', text: 'File Storage' },
+              { value: 'table', text: 'Table Storage' }
+            ]));
+            formFields.appendChild(createFormField('replication', 'Replication', 'select', '', [
+              { value: 'lrs', text: 'Locally Redundant Storage (LRS)' },
+              { value: 'zrs', text: 'Zone Redundant Storage (ZRS)' },
+              { value: 'grs', text: 'Geo-Redundant Storage (GRS)' }
+            ]));
+            break;
+            
+          case 'servicebus':
+            formFields.appendChild(createFormField('tier', 'Service Tier', 'select', '', [
+              { value: 'basic', text: 'Basic' },
+              { value: 'standard', text: 'Standard' },
+              { value: 'premium', text: 'Premium' }
+            ]));
+            formFields.appendChild(createFormField('topic', 'Topic Name', 'text', 'Enter the main topic name'));
+            formFields.appendChild(createFormField('subscription', 'Subscription Name', 'text', 'Enter the subscription name'));
+            break;
+        }
+        
+        // Add environment selector for all resources
+        const environmentSelector = document.getElementById("environment-selector");
+        environmentSelector.innerHTML = `
+          <h3>Deployment Environment</h3>
+          <div class="form-group">
+            <label for="environment">Select Environment</label>
+            <select id="environment" name="environment" required>
+              <option value="dev">Development</option>
+              <option value="test">Test</option>
+              <option value="staging">Staging</option>
+              <option value="prod">Production</option>
+            </select>
+          </div>
+          <div class="approval-info">
+            <p>Note: Production deployments require manager approval.</p>
+          </div>
+        `;
+      }
+
+      // Helper function to create form fields
+      function createFormField(id, label, type, placeholder, options = []) {
+        const fieldDiv = document.createElement('div');
+        fieldDiv.className = 'form-group';
+        
+        const fieldLabel = document.createElement('label');
+        fieldLabel.setAttribute('for', id);
+        fieldLabel.textContent = label;
+        fieldDiv.appendChild(fieldLabel);
+        
+        if (type === 'select') {
+          const select = document.createElement('select');
+          select.id = id;
+          select.name = id;
+          select.required = true;
+          
+          options.forEach(option => {
+            const optionElement = document.createElement('option');
+            optionElement.value = option.value;
+            optionElement.textContent = option.text;
+            select.appendChild(optionElement);
+          });
+          
+          fieldDiv.appendChild(select);
+        } else {
+          const input = document.createElement('input');
+          input.type = type;
+          input.id = id;
+          input.name = id;
+          input.placeholder = placeholder;
+          input.required = true;
+          fieldDiv.appendChild(input);
+        }
+        
+        return fieldDiv;
+      }
 
       // Close and cancel form buttons
       document.getElementById("close-form").addEventListener("click", function() {
@@ -132,6 +386,9 @@
               <p>Your resource has been submitted for provisioning. You will be notified when it is ready.</p>
             </div>
           `;
+          
+          // Scroll to result message
+          document.getElementById("result-message").scrollIntoView({ behavior: "smooth" });
         }, 2000);
       });
     </script>

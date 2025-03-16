@@ -23,7 +23,16 @@
       })();
     </script>
   </head>
-  <body class="login-page">
+  <body>
+    <!-- Header -->
+    <header class="site-header">
+      <div class="header-container">
+        <img src="/docs/assets/tandem-logo.png" alt="Tandem Diabetes Care Logo" class="header-logo" />
+        <h1 class="header-title">Tandem Internal Tools</h1>
+      </div>
+    </header>
+
+    <!-- Main content -->
     <div class="login-container">
       <div class="login-branding">
         <img src="/docs/assets/tandem-logo.png" alt="Tandem Diabetes Care Logo" class="logo" />
@@ -35,7 +44,7 @@
         <div class="login-form">
           <h2>Login to Access</h2>
           <p>To use this application, you need a GitHub Personal Access Token with the following scopes:</p>
-          <ul>
+          <ul class="scope-list">
             <li><code>repo</code> - Full control of private repositories</li>
             <li><code>workflow</code> - Permission to trigger GitHub Actions workflows</li>
             <li><code>read:org</code> - To verify organization and team membership</li>
@@ -61,6 +70,18 @@
         </div>
       </div>
     </div>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+      <div class="footer-container">
+        <p>&copy; 2025 Tandem Diabetes Care. All rights reserved.</p>
+        <div class="footer-links">
+          <a href="#">Privacy Policy</a>
+          <a href="#">Terms of Service</a>
+          <a href="#">Contact Support</a>
+        </div>
+      </div>
+    </footer>
 
     <script src="/infra-self-service/js/auth.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
