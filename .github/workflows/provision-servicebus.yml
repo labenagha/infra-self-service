@@ -1,48 +1,43 @@
+# .github/workflows/provision-servicebus.yml
+
 name: Provision Service Bus Topic
 
 on:
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Environment (dev/test)'
+        description: 'Environment (e.g. dev or test)'
         required: true
-        type: choice
-        options:
-          - dev
-          - test
       resourceName:
         description: 'Service Bus Topic Name'
         required: true
-        type: string
       messageRetention:
-        description: 'Message Retention (Days)'
-        required: true
+        description: 'Message Retention (Days), default 7'
+        required: false
         default: '7'
-        type: string
       maxSizeInMegabytes:
-        description: 'Maximum Size (MB)'
-        required: true
+        description: 'Max Size in MB, default 1024'
+        required: false
         default: '1024'
-        type: string
       requiresDuplicateDetection:
-        description: 'Enable Duplicate Detection'
-        required: true
+        description: 'Enable duplicate detection (true/false)'
+        required: false
         default: 'false'
-        type: string
 
 jobs:
   provision_servicebus:
     runs-on: ubuntu-latest
 
     steps:
-      # 1) Checkout your repository
-      - name: Checkout repository
+      # 1) Check out the repository
+      - name: Checkout
         uses: actions/checkout@v3
 
-      # 2) Azure Login with a single JSON creds secret (Service Principal + client secret)
+      # 2) Azure Login (Service Principal via JSON creds)
       - name: Azure Login
         uses: azure/login@v2
         with:
+          # Save your SP credentials in the secret: AZURE_CREDENTIALS
           creds: ${{ secrets.AZURE_CREDENTIALS }}
           enable-AzPSSession: true
 
@@ -50,45 +45,38 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
 
-      # 4) Debug workspace (optional) — see what folders actually exist
-      - name: List workspace contents
-        run: |
-          echo "Listing $GITHUB_WORKSPACE"
-          ls -R $GITHUB_WORKSPACE
-
-      # 5) Terraform Init
+      # 4) Terraform Init
       - name: Terraform Init
         run: |
+          # Use the environment input to select your Terraform folder (e.g. dev or test)
           cd $GITHUB_WORKSPACE/modules/${{ github.event.inputs.environment }}
           terraform init
 
-      # 6) Terraform Validate
+      # 5) Terraform Validate
       - name: Terraform Validate
         run: |
           cd $GITHUB_WORKSPACE/modules/${{ github.event.inputs.environment }}
           terraform validate
 
-      # 7) Terraform Apply
+      # 6) Terraform Apply
       - name: Terraform Apply
         run: |
           cd $GITHUB_WORKSPACE/modules/${{ github.event.inputs.environment }}
 
-          # Optionally create a temporary .tfvars if your environment main.tf expects them:
-          echo "resource_name                 = \"${{ github.event.inputs.resourceName }}\""      >  request.tfvars
-          echo "message_retention             = \"${{ github.event.inputs.messageRetention }}\""  >> request.tfvars
-          echo "max_size_megabytes            = \"${{ github.event.inputs.maxSizeInMegabytes }}\"" >> request.tfvars
+          # Create a tfvars file from the user inputs
+          echo "resource_name              = \"${{ github.event.inputs.resourceName }}\""       >  request.tfvars
+          echo "message_retention          = \"${{ github.event.inputs.messageRetention }}\""   >> request.tfvars
+          echo "max_size_megabytes         = \"${{ github.event.inputs.maxSizeInMegabytes }}\"" >> request.tfvars
 
-          if [ "${{ github.event.inputs.requiresDuplicateDetection }}" == "true" ]; then
-            echo "requires_duplicate_detection  = true" >> request.tfvars
+          if [ "${{ github.event.inputs.requiresDuplicateDetection }}" = "true" ]; then
+            echo "requires_duplicate_detection = true" >> request.tfvars
           else
-            echo "requires_duplicate_detection  = false" >> request.tfvars
+            echo "requires_duplicate_detection = false" >> request.tfvars
           fi
 
-          # Now apply, passing the .tfvars if needed
+          # Apply with the ephemeral tfvars file
           terraform apply -auto-approve -var-file=request.tfvars
 
-      # 8) Completion Notification
-      - name: Notify completion
-        run: |
-          echo "✅ Service Bus Topic '${{ github.event.inputs.resourceName }}' provisioned successfully!"
-          echo "Environment: '${{ github.event.inputs.environment }}'"
+      # 7) Completion
+      - name: Done
+        run: echo "✅ Service Bus Topic provisioned successfully!"
