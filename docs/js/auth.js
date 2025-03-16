@@ -181,7 +181,7 @@ function loadPermissions() {
     }
     
     // Fetch and parse the permissions file
-    fetch('permissions.yml')
+    fetch('config/permissions.yml')
         .then(response => response.text())
         .then(yamlText => {
             const permissions = jsyaml.load(yamlText);
