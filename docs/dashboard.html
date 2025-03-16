@@ -3,12 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tandem Infrastructure Self-Service</title>
+    <title>Infrastructure Self-Service Portal</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
     <style>
       :root {
         --tandem-blue: #00678e;
-        --tandem-blue-light: #007fad;
+        --tandem-blue-light: #0095d9;
         --background-color: #f5f7fa;
         --text-color: #333;
         --border-color: #e0e4e8;
@@ -29,40 +29,40 @@
       }
       
       /* Sticky header */
-      .site-header {
-        background-color: white;
-        border-bottom: 1px solid var(--border-color);
+      .header {
+        background-color: var(--tandem-blue);
+        color: white;
+        padding: 1rem 2rem;
         position: sticky;
         top: 0;
-        z-index: 100;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        z-index: 10;
       }
       
       .header-container {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 1rem 2rem;
-      }
-      
-      .logo-container {
         display: flex;
         align-items: center;
-        margin-bottom: 0.5rem;
       }
       
       .logo {
-        height: 40px;
+        height: 30px;
         width: auto;
         margin-right: 1rem;
       }
       
-      .site-title {
+      .header-title {
+        color: white;
         font-size: 1.2rem;
         font-weight: 500;
-        color: var(--tandem-blue);
       }
       
+      /* App header */
       .app-header {
+        background-color: white;
+        border-bottom: 1px solid var(--border-color);
+        padding: 1rem 2rem;
+      }
+      
+      .app-header-container {
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -75,8 +75,8 @@
       }
       
       .app-description {
-        font-size: 0.9rem;
         color: #666;
+        font-size: 0.9rem;
       }
       
       .user-info {
@@ -85,9 +85,9 @@
         gap: 1rem;
       }
       
-      #username {
-        font-size: 0.9rem;
+      .username {
         color: #666;
+        font-size: 0.95rem;
       }
       
       .logout-button {
@@ -98,11 +98,6 @@
         padding: 0.5rem 1rem;
         font-size: 0.9rem;
         cursor: pointer;
-        transition: background-color 0.2s;
-      }
-      
-      .logout-button:hover {
-        background-color: rgba(0, 103, 142, 0.05);
       }
       
       /* Main content */
@@ -112,31 +107,24 @@
         padding: 0 2rem;
       }
       
-      /* Resource cards */
-      .resource-grid {
+      /* Card grid */
+      .card-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+        grid-template-columns: repeat(2, 1fr);
         gap: 2rem;
-        margin-top: 2rem;
       }
       
+      /* Resource card */
       .resource-card {
         background-color: white;
         border-radius: 8px;
-        border: 1px solid var(--border-color);
         padding: 1.5rem;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        transition: transform 0.2s, box-shadow 0.2s;
-      }
-      
-      .resource-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
       }
       
       .resource-card h2 {
-        font-size: 1.25rem;
         color: var(--tandem-blue);
+        font-size: 1.25rem;
         margin-bottom: 0.75rem;
       }
       
@@ -145,54 +133,46 @@
         margin-bottom: 1.5rem;
       }
       
-      .create-button {
+      .action-button {
         background-color: var(--tandem-blue);
         color: white;
         border: none;
         border-radius: 4px;
-        padding: 0.75rem 1.25rem;
-        font-size: 0.9rem;
+        padding: 0.75rem 1.5rem;
+        font-size: 0.95rem;
         cursor: pointer;
-        transition: background-color 0.2s;
-      }
-      
-      .create-button:hover {
-        background-color: var(--tandem-blue-light);
+        font-weight: 500;
+        width: 100%;
       }
       
       /* Form container */
-      #resource-form-container {
+      #form-container {
         display: none;
         background-color: white;
         border-radius: 8px;
-        border: 1px solid var(--border-color);
-        margin-top: 2rem;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        margin-top: 2rem;
+        padding: 1.5rem;
       }
       
       .form-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 1rem 1.5rem;
-        border-bottom: 1px solid var(--border-color);
+        margin-bottom: 1.5rem;
       }
       
       .form-title {
         font-size: 1.25rem;
-        font-weight: 500;
+        color: var(--tandem-blue);
       }
       
       .close-button {
         background: none;
         border: none;
         font-size: 1.5rem;
-        cursor: pointer;
         color: #999;
-      }
-      
-      .form-content {
-        padding: 1.5rem;
+        cursor: pointer;
       }
       
       .form-group {
@@ -214,39 +194,10 @@
         font-size: 0.95rem;
       }
       
-      .form-group input:focus,
-      .form-group select:focus {
-        outline: none;
-        border-color: var(--tandem-blue);
-        box-shadow: 0 0 0 2px rgba(0, 103, 142, 0.1);
-      }
-      
-      #environment-selector {
-        margin-top: 1.5rem;
-        padding-top: 1.5rem;
-        border-top: 1px solid var(--border-color);
-      }
-      
-      #environment-selector label {
-        display: block;
-        margin-bottom: 0.5rem;
-        font-weight: 500;
-      }
-      
-      .approval-info {
-        margin-top: 0.75rem;
-        padding: 0.5rem;
-        font-size: 0.9rem;
-        color: #666;
-        font-style: italic;
-      }
-      
       .form-actions {
         display: flex;
         justify-content: flex-end;
         gap: 1rem;
-        padding-top: 1rem;
-        border-top: 1px solid var(--border-color);
         margin-top: 1.5rem;
       }
       
@@ -255,8 +206,8 @@
         color: #666;
         border: 1px solid var(--border-color);
         border-radius: 4px;
-        padding: 0.75rem 1.25rem;
-        font-size: 0.9rem;
+        padding: 0.75rem 1.5rem;
+        font-size: 0.95rem;
         cursor: pointer;
       }
       
@@ -265,321 +216,203 @@
         color: white;
         border: none;
         border-radius: 4px;
-        padding: 0.75rem 1.25rem;
-        font-size: 0.9rem;
+        padding: 0.75rem 1.5rem;
+        font-size: 0.95rem;
         cursor: pointer;
       }
       
       /* Success message */
       .success-message {
-        background-color: rgba(46, 125, 50, 0.05);
-        border: 1px solid rgba(46, 125, 50, 0.2);
-        border-left: 4px solid #2e7d32;
+        background-color: #e8f5e9;
+        border: 1px solid #c8e6c9;
+        border-left: 4px solid #4caf50;
         border-radius: 4px;
         padding: 1.25rem;
         margin-top: 2rem;
       }
       
-      .success-message h3 {
-        color: #2e7d32;
-        margin-bottom: 0.5rem;
-        font-size: 1.1rem;
-      }
-      
-      /* Footer */
-      .footer {
-        text-align: center;
-        padding: 2rem;
-        color: #666;
-        font-size: 0.9rem;
-        margin-top: 3rem;
-        border-top: 1px solid var(--border-color);
-      }
-      
-      /* Responsive adjustments */
+      /* Media queries */
       @media (max-width: 768px) {
-        .app-header {
+        .card-grid {
+          grid-template-columns: 1fr;
+        }
+        
+        .app-header-container {
           flex-direction: column;
           align-items: flex-start;
           gap: 1rem;
-        }
-        
-        .user-info {
-          width: 100%;
-          justify-content: space-between;
-        }
-        
-        .resource-grid {
-          grid-template-columns: 1fr;
         }
       }
     </style>
   </head>
   <body>
     <!-- Sticky Header -->
-    <header class="site-header">
+    <header class="header">
       <div class="header-container">
-        <div class="logo-container">
-          <img src="/docs/assets/tandem-logo.png" alt="Tandem Diabetes Care Logo" class="logo" />
-          <span class="site-title">Tandem Internal Tools</span>
-        </div>
-        <div class="app-header">
-          <div>
-            <h1 class="app-title">Infrastructure Self-Service Portal</h1>
-            <p class="app-description">Create and manage infrastructure resources</p>
-          </div>
-          <div class="user-info">
-            <span id="username">Authenticated User</span>
-            <button class="logout-button" id="logout-button">Logout</button>
-          </div>
-        </div>
+        <img src="/docs/assets/tandem-diabetes-logo.png" alt="Tandem Diabetes Care Logo" class="logo" />
+        <h1 class="header-title">Tandem Internal Tools</h1>
       </div>
     </header>
-
+    
+    <!-- App header -->
+    <div class="app-header">
+      <div class="app-header-container">
+        <div>
+          <h1 class="app-title">Infrastructure Self-Service Portal</h1>
+          <p class="app-description">Create and manage infrastructure resources</p>
+        </div>
+        <div class="user-info">
+          <span class="username">Authenticated User</span>
+          <button class="logout-button" id="logout-button">Logout</button>
+        </div>
+      </div>
+    </div>
+    
     <!-- Main content -->
     <main class="main-content">
-      <!-- Resource cards in grid layout -->
-      <div class="resource-grid">
+      <!-- Just two cards in a grid layout -->
+      <div class="card-grid">
         <div class="resource-card">
           <h2>Service Bus</h2>
           <p>Set up messaging services for your applications.</p>
-          <button class="create-button" id="create-servicebus">Create Service Bus</button>
+          <button class="action-button" id="create-service-bus">Create Service Bus</button>
         </div>
         
         <div class="resource-card">
           <h2>Storage Account</h2>
           <p>Create and manage storage accounts for your application data.</p>
-          <button class="create-button" id="create-storage">Create Storage Account</button>
+          <button class="action-button" id="create-storage">Create Storage Account</button>
         </div>
       </div>
-
+      
       <!-- Form container -->
-      <div id="resource-form-container">
+      <div id="form-container">
         <div class="form-header">
           <h2 class="form-title" id="form-title">Create Resource</h2>
           <button class="close-button" id="close-form">&times;</button>
         </div>
-        <div class="form-content">
-          <form id="resource-form">
-            <div id="dynamic-fields">
-              <!-- Dynamic fields will be inserted here -->
-            </div>
-            <div id="environment-selector">
-              <!-- Environment selector will be inserted here -->
-            </div>
-            <div class="form-actions">
-              <button type="button" class="cancel-button" id="cancel-form">Cancel</button>
-              <button type="submit" class="submit-button">Submit</button>
-            </div>
-          </form>
-        </div>
+        
+        <form id="resource-form">
+          <div id="form-fields">
+            <!-- Form fields will be added dynamically -->
+          </div>
+          
+          <div class="form-actions">
+            <button type="button" class="cancel-button" id="cancel-form">Cancel</button>
+            <button type="submit" class="submit-button">Submit</button>
+          </div>
+        </form>
       </div>
-
+      
       <!-- Success message container -->
       <div id="result-message"></div>
     </main>
-
-    <footer class="footer">
-      <p>&copy; 2025 Tandem Diabetes Care. All rights reserved.</p>
-    </footer>
-
+    
     <script>
+      // Check authentication
       document.addEventListener('DOMContentLoaded', function() {
-        // Check if user is logged in
-        const token = sessionStorage.getItem("github_token");
+        const token = sessionStorage.getItem('github_token');
         if (!token) {
-          window.location.href = "/infra-self-service/index.html";
+          window.location.href = '/infra-self-service/index.html';
         }
+      });
+      
+      // Logout handler
+      document.getElementById('logout-button').addEventListener('click', function() {
+        sessionStorage.removeItem('github_token');
+        window.location.href = '/infra-self-service/index.html';
+      });
+      
+      // Service Bus button
+      document.getElementById('create-service-bus').addEventListener('click', function() {
+        document.getElementById('form-title').textContent = 'Create Service Bus';
         
-        // Service Bus button click handler
-        document.getElementById('create-servicebus').addEventListener('click', function() {
-          const fields = [
-            {
-              id: 'name',
-              label: 'Service Bus Name',
-              type: 'text',
-              placeholder: 'Enter a name for your service bus'
-            },
-            {
-              id: 'tier',
-              label: 'Service Tier',
-              type: 'select',
-              options: [
-                { value: 'basic', text: 'Basic' },
-                { value: 'standard', text: 'Standard' },
-                { value: 'premium', text: 'Premium' }
-              ]
-            },
-            {
-              id: 'topic',
-              label: 'Topic Name',
-              type: 'text',
-              placeholder: 'Enter the main topic name'
-            },
-            {
-              id: 'subscription',
-              label: 'Subscription Name',
-              type: 'text',
-              placeholder: 'Enter the subscription name'
-            }
-          ];
+        // Set form fields
+        document.getElementById('form-fields').innerHTML = `
+          <div class="form-group">
+            <label for="name">Service Bus Name</label>
+            <input type="text" id="name" name="name" placeholder="Enter a name for your service bus" required>
+          </div>
           
-          showForm('Create Service Bus', fields);
-          loadEnvironmentSelector();
-        });
+          <div class="form-group">
+            <label for="tier">Service Tier</label>
+            <select id="tier" name="tier" required>
+              <option value="basic">Basic</option>
+              <option value="standard">Standard</option>
+              <option value="premium">Premium</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="topic">Topic Name</label>
+            <input type="text" id="topic" name="topic" placeholder="Enter the main topic name" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="subscription">Subscription Name</label>
+            <input type="text" id="subscription" name="subscription" placeholder="Enter the subscription name" required>
+          </div>
+        `;
         
-        // Storage Account button click handler
-        document.getElementById('create-storage').addEventListener('click', function() {
-          const fields = [
-            {
-              id: 'name',
-              label: 'Storage Account Name',
-              type: 'text',
-              placeholder: 'Enter a name for your storage account'
-            },
-            {
-              id: 'type',
-              label: 'Storage Type',
-              type: 'select',
-              options: [
-                { value: 'blob', text: 'Blob Storage' },
-                { value: 'file', text: 'File Storage' },
-                { value: 'table', text: 'Table Storage' }
-              ]
-            },
-            {
-              id: 'replication',
-              label: 'Replication',
-              type: 'select',
-              options: [
-                { value: 'lrs', text: 'Locally Redundant Storage (LRS)' },
-                { value: 'zrs', text: 'Zone Redundant Storage (ZRS)' },
-                { value: 'grs', text: 'Geo-Redundant Storage (GRS)' }
-              ]
-            }
-          ];
-          
-          showForm('Create Storage Account', fields);
-          loadEnvironmentSelector();
-        });
+        document.getElementById('form-container').style.display = 'block';
+      });
+      
+      // Storage Account button
+      document.getElementById('create-storage').addEventListener('click', function() {
+        document.getElementById('form-title').textContent = 'Create Storage Account';
         
-        // Form handling functions
-        function showForm(title, fields) {
-          document.getElementById('form-title').textContent = title;
-          const dynamicFields = document.getElementById('dynamic-fields');
-          dynamicFields.innerHTML = '';
+        // Set form fields
+        document.getElementById('form-fields').innerHTML = `
+          <div class="form-group">
+            <label for="name">Storage Account Name</label>
+            <input type="text" id="name" name="name" placeholder="Enter a name for your storage account" required>
+          </div>
           
-          // Add fields to form
-          fields.forEach(field => {
-            const formGroup = document.createElement('div');
-            formGroup.className = 'form-group';
-            
-            const label = document.createElement('label');
-            label.setAttribute('for', field.id);
-            label.textContent = field.label;
-            formGroup.appendChild(label);
-            
-            if (field.type === 'select') {
-              const select = document.createElement('select');
-              select.id = field.id;
-              select.name = field.id;
-              field.options.forEach(option => {
-                const optionEl = document.createElement('option');
-                optionEl.value = option.value;
-                optionEl.textContent = option.text;
-                select.appendChild(optionEl);
-              });
-              formGroup.appendChild(select);
-            } else {
-              const input = document.createElement('input');
-              input.type = field.type;
-              input.id = field.id;
-              input.name = field.id;
-              input.placeholder = field.placeholder || '';
-              formGroup.appendChild(input);
-            }
-            
-            dynamicFields.appendChild(formGroup);
-          });
+          <div class="form-group">
+            <label for="type">Storage Type</label>
+            <select id="type" name="type" required>
+              <option value="blob">Blob Storage</option>
+              <option value="file">File Storage</option>
+              <option value="table">Table Storage</option>
+            </select>
+          </div>
           
-          // Show form container
-          document.getElementById('resource-form-container').style.display = 'block';
-          document.getElementById('resource-form-container').scrollIntoView({ behavior: 'smooth' });
-        }
+          <div class="form-group">
+            <label for="replication">Replication</label>
+            <select id="replication" name="replication" required>
+              <option value="lrs">Locally Redundant Storage (LRS)</option>
+              <option value="zrs">Zone Redundant Storage (ZRS)</option>
+              <option value="grs">Geo-Redundant Storage (GRS)</option>
+            </select>
+          </div>
+        `;
         
-        function loadEnvironmentSelector() {
-          const envSelector = document.getElementById("environment-selector");
-          envSelector.innerHTML = "<label>Target Environment:</label>";
-
-          const select = document.createElement("select");
-          select.id = "environment";
-          select.name = "environment";
-          
-          // Available environments
-          const environments = ['Development', 'Test', 'Staging', 'Production'];
-
-          environments.forEach((env) => {
-            const option = document.createElement("option");
-            option.value = env.toLowerCase();
-            option.textContent = env;
-            select.appendChild(option);
-          });
-
-          envSelector.appendChild(select);
-
-          // Add approval indication
-          const approvalInfo = document.createElement("div");
-          approvalInfo.className = "approval-info";
-          approvalInfo.innerHTML = "&nbsp;";
-
-          select.addEventListener("change", () => {
-            const selectedEnv = select.value;
-            if (selectedEnv === 'production') {
-              approvalInfo.textContent = "* Requires approval from CIE team";
-            } else {
-              approvalInfo.innerHTML = "&nbsp;";
-            }
-          });
-
-          // Trigger initial display
-          const event = new Event("change");
-          select.dispatchEvent(event);
-
-          envSelector.appendChild(approvalInfo);
-        }
+        document.getElementById('form-container').style.display = 'block';
+      });
+      
+      // Close and cancel buttons
+      document.getElementById('close-form').addEventListener('click', function() {
+        document.getElementById('form-container').style.display = 'none';
+      });
+      
+      document.getElementById('cancel-form').addEventListener('click', function() {
+        document.getElementById('form-container').style.display = 'none';
+      });
+      
+      // Form submission
+      document.getElementById('resource-form').addEventListener('submit', function(event) {
+        event.preventDefault();
         
-        function hideForm() {
-          document.getElementById('resource-form-container').style.display = 'none';
-        }
+        // Hide form
+        document.getElementById('form-container').style.display = 'none';
         
-        // Close and cancel buttons
-        document.getElementById('close-form').addEventListener('click', hideForm);
-        document.getElementById('cancel-form').addEventListener('click', hideForm);
-        
-        // Form submission
-        document.getElementById('resource-form').addEventListener('submit', function(event) {
-          event.preventDefault();
-          
-          // Hide form
-          hideForm();
-          
-          // Show success message
-          document.getElementById('result-message').innerHTML = `
-            <div class="success-message">
-              <h3>Resource Created Successfully</h3>
-              <p>Your resource has been submitted for provisioning. You will be notified when it is ready.</p>
-            </div>
-          `;
-          
-          // Scroll to result message
-          document.getElementById('result-message').scrollIntoView({ behavior: 'smooth' });
-        });
-        
-        // Logout button handler
-        document.getElementById('logout-button').addEventListener('click', function() {
-          sessionStorage.removeItem("github_token");
-          window.location.href = "/infra-self-service/index.html";
-        });
+        // Show success message
+        document.getElementById('result-message').innerHTML = `
+          <div class="success-message">
+            <h3>Resource Created Successfully</h3>
+            <p>Your resource has been submitted for provisioning. You will be notified when it is ready.</p>
+          </div>
+        `;
       });
     </script>
   </body>
