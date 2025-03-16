@@ -33,35 +33,42 @@ on:
 jobs:
   provision_servicebus:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # 1) Azure Login with Service Principal + Client Secret (no OIDC)
       - name: Azure Login (Service Principal)
-        uses: azure/login@v1.4
+        uses: azure/login@v1.9.0
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      # 2) Install Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
 
+      # 3) Terraform Init
       - name: Terraform Init
         run: |
           cd modules/service-bus/${{ github.event.inputs.environment }}
           terraform init
 
+      # 4) Terraform Validate
       - name: Terraform Validate
         run: |
           cd modules/service-bus/${{ github.event.inputs.environment }}
           terraform validate
 
+      # 5) Terraform Apply
       - name: Terraform Apply
         run: |
           cd modules/service-bus/${{ github.event.inputs.environment }}
 
+          # Create a temporary tfvars file based on input
           echo 'resource_name = "${{ github.event.inputs.resourceName }}"' > terraform.tfvars
           echo 'message_retention = "${{ github.event.inputs.messageRetention }}"' >> terraform.tfvars
           echo 'max_size_megabytes = "${{ github.event.inputs.maxSizeInMegabytes }}"' >> terraform.tfvars
@@ -74,6 +81,7 @@ jobs:
 
           terraform apply -auto-approve
 
+      # 6) Completion Notification
       - name: Notify completion
         run: |
           echo "✅ Service Bus Topic '${{ github.event.inputs.resourceName }}' provisioned successfully in '${{ github.event.inputs.environment }}' environment."
