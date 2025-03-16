@@ -35,40 +35,46 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      # 1) Check out your repository
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 1) Azure Login with Service Principal + Client Secret (no OIDC)
-      - name: Azure Login (Service Principal)
-        uses: azure/login@v1.9.0
+      # 2) Azure Login with a single JSON creds secret (Service Principal + client secret)
+      - name: Azure Login
+        uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          enable-AzPSSession: true
 
-      # 2) Install Terraform
+      # 3) (Optional) Example: Display your Azure subscription via Az PowerShell
+      - name: Show Azure Subscription
+        shell: pwsh
+        run: |
+          Write-Host "Current Azure Subscription:"
+          Get-AzSubscription
+
+      # 4) Setup Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
 
-      # 3) Terraform Init
+      # 5) Terraform Init
       - name: Terraform Init
         run: |
           cd modules/service-bus/${{ github.event.inputs.environment }}
           terraform init
 
-      # 4) Terraform Validate
+      # 6) Terraform Validate
       - name: Terraform Validate
         run: |
           cd modules/service-bus/${{ github.event.inputs.environment }}
           terraform validate
 
-      # 5) Terraform Apply
+      # 7) Terraform Apply
       - name: Terraform Apply
         run: |
           cd modules/service-bus/${{ github.event.inputs.environment }}
 
-          # Create a temporary tfvars file based on input
+          # Create a temporary tfvars file from workflow_dispatch inputs
           echo 'resource_name = "${{ github.event.inputs.resourceName }}"' > terraform.tfvars
           echo 'message_retention = "${{ github.event.inputs.messageRetention }}"' >> terraform.tfvars
           echo 'max_size_megabytes = "${{ github.event.inputs.maxSizeInMegabytes }}"' >> terraform.tfvars
@@ -81,7 +87,8 @@ jobs:
 
           terraform apply -auto-approve
 
-      # 6) Completion Notification
+      # 8) Completion Notification
       - name: Notify completion
         run: |
-          echo "✅ Service Bus Topic '${{ github.event.inputs.resourceName }}' provisioned successfully in '${{ github.event.inputs.environment }}' environment."
+          echo "✅ Service Bus Topic '${{ github.event.inputs.resourceName }}' provisioned successfully!"
+          echo "Environment: '${{ github.event.inputs.environment }}'"
