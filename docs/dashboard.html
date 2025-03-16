@@ -194,6 +194,16 @@
         font-size: 0.95rem;
       }
       
+      .form-group input[type="checkbox"] {
+        width: auto;
+        margin-right: 0.5rem;
+      }
+      
+      .checkbox-label {
+        display: flex;
+        align-items: center;
+      }
+      
       .form-actions {
         display: flex;
         justify-content: flex-end;
@@ -309,6 +319,37 @@
     </main>
     
     <script>
+      // Service Bus schema from schema.json
+      const serviceBusSchema = {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Topic Name",
+            "description": "Name of the Service Bus Topic"
+          },
+          "messageRetention": {
+            "type": "number",
+            "title": "Message Retention (Days)",
+            "default": 7,
+            "minimum": 1,
+            "maximum": 14
+          },
+          "maxSizeInMegabytes": {
+            "type": "number",
+            "title": "Maximum Size (MB)",
+            "default": 1024,
+            "enum": [1024, 2048, 3072, 4096, 5120]
+          },
+          "requiresDuplicateDetection": {
+            "type": "boolean",
+            "title": "Enable Duplicate Detection",
+            "default": false
+          }
+        },
+        "required": ["name"]
+      };
+      
       // Check authentication
       document.addEventListener('DOMContentLoaded', function() {
         const token = sessionStorage.getItem('github_token');
@@ -327,32 +368,93 @@
       document.getElementById('create-service-bus').addEventListener('click', function() {
         document.getElementById('form-title').textContent = 'Create Service Bus';
         
-        // Set form fields
-        document.getElementById('form-fields').innerHTML = `
-          <div class="form-group">
-            <label for="name">Service Bus Name</label>
-            <input type="text" id="name" name="name" placeholder="Enter a name for your service bus" required>
-          </div>
+        // Clear previous form fields
+        document.getElementById('form-fields').innerHTML = '';
+        
+        // Generate form fields based on schema
+        Object.entries(serviceBusSchema.properties).forEach(([fieldName, fieldConfig]) => {
+          const formGroup = document.createElement('div');
+          formGroup.className = 'form-group';
           
-          <div class="form-group">
-            <label for="tier">Service Tier</label>
-            <select id="tier" name="tier" required>
-              <option value="basic">Basic</option>
-              <option value="standard">Standard</option>
-              <option value="premium">Premium</option>
-            </select>
-          </div>
+          const label = document.createElement('label');
+          label.setAttribute('for', fieldName);
+          label.textContent = fieldConfig.title;
           
-          <div class="form-group">
-            <label for="topic">Topic Name</label>
-            <input type="text" id="topic" name="topic" placeholder="Enter the main topic name" required>
-          </div>
+          let input;
           
-          <div class="form-group">
-            <label for="subscription">Subscription Name</label>
-            <input type="text" id="subscription" name="subscription" placeholder="Enter the subscription name" required>
-          </div>
-        `;
+          if (fieldConfig.type === 'boolean') {
+            // For boolean fields (checkboxes)
+            const checkboxContainer = document.createElement('div');
+            checkboxContainer.className = 'checkbox-label';
+            
+            input = document.createElement('input');
+            input.type = 'checkbox';
+            input.id = fieldName;
+            input.name = fieldName;
+            
+            if (fieldConfig.default === true) {
+              input.checked = true;
+            }
+            
+            checkboxContainer.appendChild(input);
+            checkboxContainer.appendChild(document.createTextNode(fieldConfig.description || ''));
+            
+            formGroup.appendChild(label);
+            formGroup.appendChild(checkboxContainer);
+          } 
+          else if (fieldConfig.enum) {
+            // For enum fields (select dropdowns)
+            input = document.createElement('select');
+            input.id = fieldName;
+            input.name = fieldName;
+            
+            fieldConfig.enum.forEach(value => {
+              const option = document.createElement('option');
+              option.value = value;
+              option.textContent = value;
+              input.appendChild(option);
+            });
+            
+            if (fieldConfig.default) {
+              input.value = fieldConfig.default;
+            }
+            
+            formGroup.appendChild(label);
+            formGroup.appendChild(input);
+          }
+          else {
+            // For other input types (text, number)
+            input = document.createElement('input');
+            input.type = fieldConfig.type === 'number' ? 'number' : 'text';
+            input.id = fieldName;
+            input.name = fieldName;
+            
+            if (fieldConfig.description) {
+              input.placeholder = fieldConfig.description;
+            }
+            
+            if (fieldConfig.default !== undefined) {
+              input.value = fieldConfig.default;
+            }
+            
+            if (fieldConfig.minimum !== undefined) {
+              input.min = fieldConfig.minimum;
+            }
+            
+            if (fieldConfig.maximum !== undefined) {
+              input.max = fieldConfig.maximum;
+            }
+            
+            if (serviceBusSchema.required && serviceBusSchema.required.includes(fieldName)) {
+              input.required = true;
+            }
+            
+            formGroup.appendChild(label);
+            formGroup.appendChild(input);
+          }
+          
+          document.getElementById('form-fields').appendChild(formGroup);
+        });
         
         document.getElementById('form-container').style.display = 'block';
       });
