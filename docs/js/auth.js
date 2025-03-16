@@ -1,6 +1,5 @@
 // auth.js - Handles GitHub authentication with Azure Function for token exchange
-// Make sure to include js-yaml in your HTML:
-// <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
+// (If you already include js-yaml via a script tag in index.html, this code will load it only if necessary.)
 
 // GitHub OAuth App credentials
 const clientId = 'Iv23liYjrKuCgJRPT42k';
@@ -167,8 +166,21 @@ async function fetchUserData() {
     }
 }
 
-// New function to load and parse the permissions YAML file, then call loadResourceOptions with it
+// NEW: Load and parse the permissions YAML file, ensuring js-yaml is available
 function loadPermissions() {
+    // Check if js-yaml is loaded; if not, load it dynamically
+    if (typeof jsyaml === 'undefined') {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js';
+        script.onload = loadPermissions; // once loaded, re-run loadPermissions
+        script.onerror = function() {
+            console.error('Failed to load js-yaml library.');
+        };
+        document.head.appendChild(script);
+        return;
+    }
+    
+    // Fetch and parse the permissions file
     fetch('permissions.yml')
         .then(response => response.text())
         .then(yamlText => {
