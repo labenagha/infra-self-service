@@ -259,7 +259,7 @@
     <!-- Sticky Header -->
     <header class="header">
       <div class="header-container">
-        <img src="/docs/assets/tandem-diabetes-logo.png" alt="Tandem Diabetes Care Logo" class="logo" />
+        <img src="docs/assets/tandem-diabetes-logo.png" alt="Tandem Diabetes Care Logo" class="logo" />
         <h1 class="header-title">Tandem Internal Tools</h1>
       </div>
     </header>
@@ -544,8 +544,9 @@
           </div>
         `;
         
-        // Trigger the GitHub workflow
-        fetch('https://api.github.com/repos/labenagha/infra-self-service/actions/workflows/provision.yml/dispatches', {
+        // Trigger the GitHub workflow based on resource type
+        const workflowFile = resourceType === 'service-bus' ? 'provision-servicebus.yml' : 'provision-storage.yml';
+        fetch(`https://api.github.com/repos/labenagha/infra-self-service/actions/workflows/${workflowFile}/dispatches`, {
           method: 'POST',
           headers: {
             'Authorization': `token ${token}`,
