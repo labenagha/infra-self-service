@@ -55,18 +55,37 @@ app.http('httpTrigger1', {
             const code = body.code;
             context.log('Received code, exchanging for token...');
             
+            // Verify environment variables
+            if (!process.env.GITHUB_CLIENT_ID || !process.env.GITHUB_CLIENT_SECRET) {
+                context.log.error('Missing GitHub credentials in environment variables');
+                return {
+                    status: 500,
+                    headers,
+                    body: JSON.stringify({ 
+                        error: "Server configuration error", 
+                        details: "OAuth credentials not properly configured"
+                    })
+                };
+            }
+            
             // 3) Exchange code with GitHub
+            context.log('Sending to GitHub with client ID:', process.env.GITHUB_CLIENT_ID);
+            const requestBody = {
+                client_id: process.env.GITHUB_CLIENT_ID,
+                client_secret: process.env.GITHUB_CLIENT_SECRET,
+                code: code,
+                redirect_uri: 'https://labenagha.github.io/infra-self-service/auth/github/callback'
+            };
+            
+            context.log('Request body for GitHub:', JSON.stringify(requestBody));
+            
             const response = await fetch('https://github.com/login/oauth/access_token', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json'
                 },
-                body: JSON.stringify({
-                    client_id: process.env.GITHUB_CLIENT_ID,
-                    client_secret: process.env.GITHUB_CLIENT_SECRET,
-                    code: code
-                })
+                body: JSON.stringify(requestBody)
             });
 
             const responseText = await response.text();
@@ -75,7 +94,10 @@ app.http('httpTrigger1', {
             let data;
             try {
                 data = JSON.parse(responseText);
-                context.log('GitHub response data:', data);
+                // Redact sensitive info before logging
+                const logData = {...data};
+                if (logData.access_token) logData.access_token = '***REDACTED***';
+                context.log('GitHub response data:', logData);
             } catch (error) {
                 context.log.error('Error parsing GitHub response:', error);
                 return {
@@ -100,7 +122,8 @@ app.http('httpTrigger1', {
                 token_type: data.token_type
             });
             
-            context.log('Sending response:', responseBody);
+            // Log success but redact token
+            context.log('Token exchange successful');
             
             return {
                 status: 200,

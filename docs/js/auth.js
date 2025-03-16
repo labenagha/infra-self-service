@@ -1,5 +1,4 @@
 // auth.js - Handles GitHub authentication with Azure Function for token exchange
-// (If you already include js-yaml via a script tag in index.html, this code will load it only if necessary.)
 
 // GitHub OAuth App credentials
 const clientId = 'Iv23liYjrKuCgJRPT42k';
@@ -22,15 +21,18 @@ const resultMessage = document.getElementById('result-message');
 
 // Initialize the application
 function init() {
-    // Check if we're on the callback URL or have a stored auth code
+    // Check if we're on the callback URL with a fresh code
     const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get('code') || sessionStorage.getItem('github_auth_code');
+    const code = urlParams.get('code');
     
     if (code) {
-        // Clear the stored auth code if it exists
-        sessionStorage.removeItem('github_auth_code');
+        console.log("OAuth code detected, processing login...");
+        // Clean URL without affecting history state
+        const url = new URL(window.location.href);
+        url.search = '';
+        window.history.replaceState({}, document.title, url.toString());
         
-        // We have a code from GitHub OAuth redirect
+        // Exchange the code for a token immediately
         exchangeCodeForToken(code);
     } else if (token) {
         // We already have a token
@@ -48,8 +50,12 @@ function init() {
 
 // Start the login process
 function initiateLogin() {
+    // Generate a state parameter for security
+    const state = Math.random().toString(36).substring(2, 15);
+    sessionStorage.setItem('github_oauth_state', state);
+    
     // Redirect to GitHub authorization page
-    const authUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=repo,read:org`;
+    const authUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=repo,read:org&state=${state}`;
     window.location.href = authUrl;
 }
 
@@ -69,6 +75,10 @@ async function exchangeCodeForToken(code) {
         
         console.log("Response status:", response.status);
         
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        
         // Try to get the raw text first
         const rawText = await response.text();
         console.log("Raw response:", rawText);
@@ -77,6 +87,11 @@ async function exchangeCodeForToken(code) {
         if (rawText) {
             try {
                 const data = JSON.parse(rawText);
+                
+                if (data.error) {
+                    throw new Error(data.error_description || data.error);
+                }
+                
                 token = data.access_token;
                 
                 if (!token) {
@@ -87,8 +102,13 @@ async function exchangeCodeForToken(code) {
                 // Store the token in session storage
                 sessionStorage.setItem('github_token', token);
                 
-                // Redirect to the main page
-                window.location.href = '/infra-self-service/';
+                // Update UI and fetch user data
+                showLoggedInState();
+                fetchUserData();
+                
+                // Show resource selector
+                hideLoading();
+                
             } catch (jsonError) {
                 console.error("JSON parsing error:", jsonError);
                 throw new Error(`Invalid JSON response: ${rawText}`);
@@ -99,11 +119,6 @@ async function exchangeCodeForToken(code) {
     } catch (error) {
         console.error('Error exchanging token:', error);
         showError('Login failed: ' + error.message);
-        // Wait 3 seconds then redirect to main page
-        setTimeout(() => {
-            window.location.href = '/infra-self-service/';
-        }, 3000);
-    } finally {
         hideLoading();
     }
 }
@@ -135,9 +150,9 @@ async function fetchUserData() {
         }
         
         const teams = await teamsResponse.json();
-        console.log('Teams from GitHub:', teams); // <--- LOG entire objects
+        console.log('Teams from GitHub:', teams);
         const teamNames = teams.map(team => team.name);
-        console.log('Team Names:', teamNames);     // <--- LOG array of names
+        console.log('Team Names:', teamNames);
         
         // Determine user permissions based on team membership
         if (teamNames.includes('cie-team')) {
@@ -168,7 +183,7 @@ async function fetchUserData() {
     }
 }
 
-// NEW: Load and parse the permissions YAML file, ensuring js-yaml is available
+// Load and parse the permissions YAML file, ensuring js-yaml is available
 function loadPermissions() {
     // Check if js-yaml is loaded; if not, load it dynamically
     if (typeof jsyaml === 'undefined') {
@@ -251,8 +266,14 @@ function showError(message) {
         <div class="error-message">
             <h3>Error</h3>
             <p>${message}</p>
+            <button id="try-again-button" class="btn">Try Again</button>
         </div>
     `;
+    
+    document.getElementById('try-again-button')?.addEventListener('click', () => {
+        resultMessage.innerHTML = '';
+        showLoggedOutState();
+    });
 }
 
 // Initialize the application
