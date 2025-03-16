@@ -9,22 +9,44 @@ async function submitStorageAccountRequest() {
     document.getElementById('loading').style.display = 'block';
     
     try {
-        // Prepare the inputs for the GitHub Action
+        // Prepare the inputs for the GitHub Action - Group parameters into JSON objects
+        
+        // Account configuration
+        const accountConfig = {
+            kind: formData.get('accountKind') || 'StorageV2',
+            tier: formData.get('accountTier') || 'Standard',
+            replication: formData.get('accountReplicationType') || 'LRS',
+            accessTier: formData.get('accessTier') || 'Hot'
+        };
+        
+        // Security configuration
+        const securityConfig = {
+            httpsOnly: document.getElementById('httpsTrafficOnlyEnabled')?.checked ? true : false,
+            minTls: formData.get('minimumTlsVersion') || 'TLS1_2',
+            publicAccess: document.getElementById('publicNetworkAccessEnabled')?.checked ? true : false,
+            sharedKeys: document.getElementById('sharedAccessKeyEnabled')?.checked ? true : false
+        };
+        
+        // Network configuration
+        const networkConfig = {
+            defaultAction: formData.get('defaultAction') || 'Deny',
+            bypass: formData.get('bypass') || 'AzureServices'
+        };
+        
+        // Data protection configuration
+        const dataProtectionConfig = {
+            softDelete: document.getElementById('softDeleteEnabled')?.checked ? true : false,
+            retentionDays: parseInt(formData.get('softDeleteRetentionDays') || '7')
+        };
+        
+        // Final workflow inputs object
         const workflowInputs = {
             environment: formData.get('environment'),
             resourceName: formData.get('name'),
-            accountKind: formData.get('accountKind') || 'StorageV2',
-            accountTier: formData.get('accountTier') || 'Standard',
-            accountReplicationType: formData.get('accountReplicationType') || 'LRS',
-            accessTier: formData.get('accessTier') || 'Hot',
-            httpsTrafficOnlyEnabled: document.getElementById('httpsTrafficOnlyEnabled')?.checked ? 'true' : 'false',
-            minimumTlsVersion: formData.get('minimumTlsVersion') || 'TLS1_2',
-            publicNetworkAccessEnabled: document.getElementById('publicNetworkAccessEnabled')?.checked ? 'true' : 'false',
-            sharedAccessKeyEnabled: document.getElementById('sharedAccessKeyEnabled')?.checked ? 'true' : 'false', 
-            defaultAction: formData.get('defaultAction') || 'Deny',
-            bypass: formData.get('bypass') || 'AzureServices',
-            softDeleteEnabled: document.getElementById('softDeleteEnabled')?.checked ? 'true' : 'false',
-            softDeleteRetentionDays: formData.get('softDeleteRetentionDays') || '7'
+            accountConfig: JSON.stringify(accountConfig),
+            securityConfig: JSON.stringify(securityConfig),
+            networkConfig: JSON.stringify(networkConfig),
+            dataProtectionConfig: JSON.stringify(dataProtectionConfig)
         };
         
         console.log('Storage Account workflow inputs:', workflowInputs);

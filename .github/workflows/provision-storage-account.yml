@@ -11,65 +11,25 @@ on:
         description: 'Storage Account Name'
         required: true
         type: string
-      accountKind:
-        description: 'Storage Account Kind'
+      accountConfig:
+        description: 'Account Configuration (JSON)'
         required: false
-        default: 'StorageV2'
+        default: '{"kind":"StorageV2","tier":"Standard","replication":"LRS","accessTier":"Hot"}'
         type: string
-      accountTier:
-        description: 'Account Tier'
+      securityConfig:
+        description: 'Security Configuration (JSON)'
         required: false
-        default: 'Standard'
+        default: '{"httpsOnly":true,"minTls":"TLS1_2","publicAccess":false,"sharedKeys":true}'
         type: string
-      accountReplicationType:
-        description: 'Account Replication Type'
+      networkConfig:
+        description: 'Network Configuration (JSON)'
         required: false
-        default: 'LRS'
+        default: '{"defaultAction":"Deny","bypass":"AzureServices"}'
         type: string
-      accessTier:
-        description: 'Access Tier'
+      dataProtectionConfig:
+        description: 'Data Protection Configuration (JSON)'
         required: false
-        default: 'Hot'
-        type: string
-      httpsTrafficOnlyEnabled:
-        description: 'HTTPS Traffic Only'
-        required: false
-        default: 'true'
-        type: string
-      minimumTlsVersion:
-        description: 'Minimum TLS Version'
-        required: false
-        default: 'TLS1_2'
-        type: string
-      publicNetworkAccessEnabled:
-        description: 'Public Network Access'
-        required: false
-        default: 'false'
-        type: string
-      sharedAccessKeyEnabled:
-        description: 'Shared Access Key Enabled'
-        required: false
-        default: 'true'
-        type: string
-      defaultAction:
-        description: 'Network Default Action'
-        required: false
-        default: 'Deny'
-        type: string
-      bypass:
-        description: 'Network Bypass'
-        required: false
-        default: 'AzureServices'
-        type: string
-      softDeleteEnabled:
-        description: 'Soft Delete Enabled'
-        required: false
-        default: 'true'
-        type: string
-      softDeleteRetentionDays:
-        description: 'Soft Delete Retention Days'
-        required: false
-        default: '7'
+        default: '{"softDelete":true,"retentionDays":7}'
         type: string
 
 jobs:
@@ -86,6 +46,48 @@ jobs:
         with:
           terraform_version: 1.3.0
       
+      - name: Parse Input JSON
+        id: parse-json
+        run: |
+          echo "Parsing configuration JSON..."
+          # Parse account config
+          ACCOUNT_CONFIG='${{ github.event.inputs.accountConfig }}'
+          ACCOUNT_KIND=$(echo $ACCOUNT_CONFIG | jq -r '.kind')
+          ACCOUNT_TIER=$(echo $ACCOUNT_CONFIG | jq -r '.tier')
+          ACCOUNT_REPLICATION=$(echo $ACCOUNT_CONFIG | jq -r '.replication')
+          ACCESS_TIER=$(echo $ACCOUNT_CONFIG | jq -r '.accessTier')
+          
+          # Parse security config
+          SECURITY_CONFIG='${{ github.event.inputs.securityConfig }}'
+          HTTPS_ONLY=$(echo $SECURITY_CONFIG | jq -r '.httpsOnly')
+          MIN_TLS=$(echo $SECURITY_CONFIG | jq -r '.minTls')
+          PUBLIC_ACCESS=$(echo $SECURITY_CONFIG | jq -r '.publicAccess')
+          SHARED_KEYS=$(echo $SECURITY_CONFIG | jq -r '.sharedKeys')
+          
+          # Parse network config
+          NETWORK_CONFIG='${{ github.event.inputs.networkConfig }}'
+          DEFAULT_ACTION=$(echo $NETWORK_CONFIG | jq -r '.defaultAction')
+          BYPASS=$(echo $NETWORK_CONFIG | jq -r '.bypass')
+          
+          # Parse data protection config
+          DATA_CONFIG='${{ github.event.inputs.dataProtectionConfig }}'
+          SOFT_DELETE=$(echo $DATA_CONFIG | jq -r '.softDelete')
+          RETENTION_DAYS=$(echo $DATA_CONFIG | jq -r '.retentionDays')
+          
+          # Set outputs for next steps
+          echo "account_kind=$ACCOUNT_KIND" >> $GITHUB_OUTPUT
+          echo "account_tier=$ACCOUNT_TIER" >> $GITHUB_OUTPUT
+          echo "account_replication=$ACCOUNT_REPLICATION" >> $GITHUB_OUTPUT
+          echo "access_tier=$ACCESS_TIER" >> $GITHUB_OUTPUT
+          echo "https_only=$HTTPS_ONLY" >> $GITHUB_OUTPUT
+          echo "min_tls=$MIN_TLS" >> $GITHUB_OUTPUT
+          echo "public_access=$PUBLIC_ACCESS" >> $GITHUB_OUTPUT
+          echo "shared_keys=$SHARED_KEYS" >> $GITHUB_OUTPUT
+          echo "default_action=$DEFAULT_ACTION" >> $GITHUB_OUTPUT
+          echo "bypass=$BYPASS" >> $GITHUB_OUTPUT
+          echo "soft_delete=$SOFT_DELETE" >> $GITHUB_OUTPUT
+          echo "retention_days=$RETENTION_DAYS" >> $GITHUB_OUTPUT
+      
       - name: Azure Login
         uses: azure/login@v1
         with:
@@ -101,18 +103,18 @@ jobs:
           cd terraform/environments/${{ github.event.inputs.environment }}
           cat > storage-account.auto.tfvars <<EOF
           storage_account_name               = "${{ github.event.inputs.resourceName }}"
-          account_kind                       = "${{ github.event.inputs.accountKind }}"
-          account_tier                       = "${{ github.event.inputs.accountTier }}"
-          account_replication_type           = "${{ github.event.inputs.accountReplicationType }}"
-          access_tier                        = "${{ github.event.inputs.accessTier }}"
-          https_traffic_only_enabled         = ${{ github.event.inputs.httpsTrafficOnlyEnabled }}
-          minimum_tls_version                = "${{ github.event.inputs.minimumTlsVersion }}"
-          public_network_access_enabled      = ${{ github.event.inputs.publicNetworkAccessEnabled }}
-          shared_access_key_enabled          = ${{ github.event.inputs.sharedAccessKeyEnabled }}
-          default_action                     = "${{ github.event.inputs.defaultAction }}"
-          bypass                             = ["${{ github.event.inputs.bypass }}"]
-          soft_delete_enabled                = ${{ github.event.inputs.softDeleteEnabled }}
-          soft_delete_retention_days         = ${{ github.event.inputs.softDeleteRetentionDays }}
+          account_kind                       = "${{ steps.parse-json.outputs.account_kind }}"
+          account_tier                       = "${{ steps.parse-json.outputs.account_tier }}"
+          account_replication_type           = "${{ steps.parse-json.outputs.account_replication }}"
+          access_tier                        = "${{ steps.parse-json.outputs.access_tier }}"
+          https_traffic_only_enabled         = ${{ steps.parse-json.outputs.https_only }}
+          minimum_tls_version                = "${{ steps.parse-json.outputs.min_tls }}"
+          public_network_access_enabled      = ${{ steps.parse-json.outputs.public_access }}
+          shared_access_key_enabled          = ${{ steps.parse-json.outputs.shared_keys }}
+          default_action                     = "${{ steps.parse-json.outputs.default_action }}"
+          bypass                             = ["${{ steps.parse-json.outputs.bypass }}"]
+          soft_delete_enabled                = ${{ steps.parse-json.outputs.soft_delete }}
+          soft_delete_retention_days         = ${{ steps.parse-json.outputs.retention_days }}
           EOF
       
       - name: Terraform Plan
@@ -141,8 +143,10 @@ jobs:
             Storage Account Details:
             - Name: ${{ github.event.inputs.resourceName }}
             - Environment: ${{ github.event.inputs.environment }}
-            - Kind: ${{ github.event.inputs.accountKind }}
-            - Access Tier: ${{ github.event.inputs.accessTier }}
+            - Kind: ${{ steps.parse-json.outputs.account_kind }}
+            - Tier: ${{ steps.parse-json.outputs.account_tier }}
+            - Replication: ${{ steps.parse-json.outputs.account_replication }}
+            - Access Tier: ${{ steps.parse-json.outputs.access_tier }}
             
             Requested by: ${{ github.actor }}
           branch: add-storage-account-${{ github.event.inputs.resourceName }}
