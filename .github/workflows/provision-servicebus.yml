@@ -45,14 +45,22 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
       
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      
       - name: Terraform Init
         run: |
-          cd environments/${{ github.event.inputs.environment || 'dev' }}
+          cd modules/service-bus/${{ github.event.inputs.environment || 'dev' }}
           terraform init
       
       - name: Terraform Validate
         run: |
-          cd environments/${{ github.event.inputs.environment || 'dev' }}
+          cd modules/service-bus/${{ github.event.inputs.environment || 'dev' }}
           terraform validate
   
   apply:
@@ -67,19 +75,22 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
       
-      - name: Configure Azure credentials
+      - name: Azure Login
         uses: azure/login@v1
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       
       - name: Terraform Init
         run: |
-          cd environments/${{ github.event.inputs.environment || 'dev' }}
+          cd modules/service-bus/${{ github.event.inputs.environment || 'dev' }}
           terraform init
       
       - name: Terraform Apply
         run: |
-          cd environments/${{ github.event.inputs.environment || 'dev' }}
+          cd modules/service-bus/${{ github.event.inputs.environment || 'dev' }}
           
           # Create tfvars file if workflow_dispatch
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
@@ -95,7 +106,7 @@ EOF
           terraform apply -auto-approve
       
       - name: Notify completion
-        if: success()
+        if: success() && github.event_name == 'pull_request'
         uses: peter-evans/create-or-update-comment@v2
         with:
           issue-number: ${{ github.event.pull_request.number }}
