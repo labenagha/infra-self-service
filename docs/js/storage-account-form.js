@@ -170,6 +170,9 @@ function loadStorageAccountForm(permissions) {
   
         // Load environment selector
         loadStorageAccountEnvironmentSelector(permissions);
+
+        // Set up form submission - IMPORTANT: Use the correct submit function
+        setupStorageAccountFormSubmit();
   
         document.getElementById("resource-selector").style.display = "none";
         document.getElementById("resource-form-container").style.display = "block";
@@ -190,6 +193,21 @@ function loadStorageAccountForm(permissions) {
           document.getElementById("resource-selector").style.display = "block";
         });
       });
+}
+
+// Set up form submission specifically for Storage Account
+function setupStorageAccountFormSubmit() {
+  const form = document.getElementById("resource-form");
+  
+  // Remove any existing event listeners by cloning and replacing the element
+  const newForm = form.cloneNode(true);
+  form.parentNode.replaceChild(newForm, form);
+  
+  // Add the correct event listener for Storage Account
+  newForm.addEventListener("submit", function(event) {
+    event.preventDefault();
+    submitStorageAccountRequest(); // Call the storage account submission function
+  });
 }
 
 // Helper function to format field names
