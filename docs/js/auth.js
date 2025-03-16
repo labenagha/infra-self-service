@@ -180,8 +180,8 @@ function loadPermissions() {
         return;
     }
     
-    // Fetch and parse the permissions file
-    fetch('config/permissions.yml')
+    // Fetch and parse the permissions file using the correct path.
+    fetch('/infra-self-service/config/permissions.yml')
         .then(response => response.text())
         .then(yamlText => {
             const permissions = jsyaml.load(yamlText);
