@@ -46,13 +46,6 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
           enable-AzPSSession: true
 
-      # 3) (Optional) Example: Display your Azure subscription via Az PowerShell
-      - name: Show Azure Subscription
-        shell: pwsh
-        run: |
-          Write-Host "Current Azure Subscription:"
-          Get-AzSubscription
-
       # 4) Setup Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
