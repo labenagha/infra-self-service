@@ -6,6 +6,7 @@ teams:
       - test
     resources:
       - ServiceBusTopic
+      - StorageAccount
     approval_required: false
 
   epo-team:

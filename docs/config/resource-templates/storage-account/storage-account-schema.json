@@ -1,0 +1,90 @@
+{
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "title": "Storage Account Name",
+        "description": "Name of the Azure Storage Account (must be globally unique, 3-24 characters, lowercase letters and numbers only)",
+        "pattern": "^[a-z0-9]{3,24}$"
+      },
+      "kind": {
+        "type": "string",
+        "title": "Storage Account Kind",
+        "description": "Type of storage account",
+        "default": "StorageV2",
+        "enum": ["BlobStorage", "BlockBlobStorage", "FileStorage", "Storage", "StorageV2"]
+      },
+      "sku": {
+        "type": "string",
+        "title": "Performance Tier",
+        "description": "Performance and redundancy configuration",
+        "default": "Standard_LRS",
+        "enum": ["Standard_LRS", "Standard_GRS", "Standard_RAGRS", "Standard_ZRS", "Premium_LRS", "Premium_ZRS"]
+      },
+      "accessTier": {
+        "type": "string",
+        "title": "Access Tier",
+        "description": "Access tier for billing purposes",
+        "default": "Hot",
+        "enum": ["Hot", "Cool"]
+      },
+      "enableHttpsTrafficOnly": {
+        "type": "boolean",
+        "title": "Enable Secure Transfer (HTTPS Only)",
+        "default": true
+      },
+      "minimumTlsVersion": {
+        "type": "string",
+        "title": "Minimum TLS Version",
+        "default": "TLS1_2",
+        "enum": ["TLS1_0", "TLS1_1", "TLS1_2"]
+      },
+      "allowBlobPublicAccess": {
+        "type": "boolean",
+        "title": "Allow Blob Public Access",
+        "default": false
+      },
+      "networkRuleSet": {
+        "type": "object",
+        "title": "Network Rules",
+        "properties": {
+          "defaultAction": {
+            "type": "string",
+            "title": "Default Network Access",
+            "default": "Deny",
+            "enum": ["Allow", "Deny"]
+          },
+          "bypass": {
+            "type": "string",
+            "title": "Bypass Rules",
+            "default": "AzureServices",
+            "enum": ["None", "AzureServices", "Logging", "Metrics", "AzureServicesAndLogging", "AzureServicesAndMetrics", "All"]
+          }
+        }
+      },
+      "blobServices": {
+        "type": "object",
+        "title": "Blob Services Configuration",
+        "properties": {
+          "deleteRetentionPolicy": {
+            "type": "object",
+            "properties": {
+              "enabled": {
+                "type": "boolean",
+                "title": "Enable Soft Delete",
+                "default": true
+              },
+              "days": {
+                "type": "number",
+                "title": "Soft Delete Retention (Days)",
+                "default": 7,
+                "minimum": 1,
+                "maximum": 365
+              }
+            }
+          }
+        }
+      }
+    },
+    "required": ["name"]
+  }

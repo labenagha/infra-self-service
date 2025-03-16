@@ -206,6 +206,24 @@
         margin-right: 0.5rem;
       }
       
+      /* Help text */
+      .help-text {
+        font-size: 0.85rem;
+        color: #666;
+        margin-top: 0.3rem;
+        margin-bottom: 0.5rem;
+      }
+      
+      /* Section headers */
+      .section-header {
+        font-size: 1.1rem;
+        color: var(--tandem-blue);
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--border-color);
+      }
+      
       /* Environment selector */
       #environment-selector {
         margin-top: 2rem;
@@ -470,6 +488,49 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
     <script src="/infra-self-service/js/auth.js"></script>
     <script src="/infra-self-service/js/service-bus-form.js"></script>
+    <script src="/infra-self-service/js/storage-account-form.js"></script>
     <script src="/infra-self-service/js/servicebus-api.js"></script>
+    <script src="/infra-self-service/js/storage-account-api.js"></script>
+    <script>
+      // Modified resource loader to handle both resource types
+      function loadResourceOptions(permissions) {
+        const resourceContainer = document.getElementById("resource-buttons");
+        resourceContainer.innerHTML = "";
+
+        // Determine available resources based on user permission
+        let availableResources = [];
+        if (userPermissions === "admin") {
+          // Use the same key as in permissions.yml
+          availableResources = permissions.teams["cie-team"].resources;
+        } else if (userPermissions === "contributor") {
+          availableResources = permissions.teams["epo-team"].resources;
+        }
+
+        // Create buttons for each resource type
+        availableResources.forEach((resource) => {
+          const button = document.createElement("button");
+          button.textContent = formatResourceName(resource);
+          button.className = "resource-button";
+          button.addEventListener("click", () => {
+            // Call appropriate form loader based on resource type
+            if (resource === "StorageAccount") {
+              loadStorageAccountForm(permissions);
+            } else if (resource === "ServiceBusTopic") {
+              loadResourceForm(resource, permissions);
+            } else {
+              // Fallback for other resource types
+              loadResourceForm(resource, permissions);
+            }
+          });
+          resourceContainer.appendChild(button);
+        });
+
+        document.getElementById("resource-selector").style.display = "block";
+      }
+
+      function formatResourceName(camelCase) {
+        return camelCase.replace(/([A-Z])/g, " $1").trim();
+      }
+    </script>
   </body>
 </html>

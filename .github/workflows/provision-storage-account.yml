@@ -1,0 +1,128 @@
+# .github/workflows/provision-storage-account.yml
+
+name: Provision Storage Account
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment (e.g. dev or test)'
+        required: true
+      resourceName:
+        description: 'Storage Account Name'
+        required: true
+      kind:
+        description: 'Storage Account Kind'
+        required: false
+        default: 'StorageV2'
+      sku:
+        description: 'Performance Tier'
+        required: false
+        default: 'Standard_LRS'
+      accessTier:
+        description: 'Access Tier (Hot or Cool)'
+        required: false
+        default: 'Hot'
+      enableHttpsTrafficOnly:
+        description: 'Enable Secure Transfer (true/false)'
+        required: false
+        default: 'true'
+      minimumTlsVersion:
+        description: 'Minimum TLS Version'
+        required: false
+        default: 'TLS1_2'
+      allowBlobPublicAccess:
+        description: 'Allow Blob Public Access (true/false)'
+        required: false
+        default: 'false'
+      defaultAction:
+        description: 'Default Network Access (Allow/Deny)'
+        required: false
+        default: 'Deny'
+      bypass:
+        description: 'Network Rule Bypass'
+        required: false
+        default: 'AzureServices'
+      softDeleteEnabled:
+        description: 'Enable Soft Delete (true/false)'
+        required: false
+        default: 'true'
+      softDeleteRetentionDays:
+        description: 'Soft Delete Retention Days'
+        required: false
+        default: '7'
+
+jobs:
+  provision_storage_account:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1) Check out the repository
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      # 2) Azure Login (Service Principal via JSON creds)
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          # Save your SP credentials in the secret: AZURE_CREDENTIALS
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          enable-AzPSSession: true
+
+      # 3) Setup Terraform
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      # 4) Terraform Init
+      - name: Terraform Init
+        run: |
+          # Use the environment input to select your Terraform folder (e.g. dev or test)
+          cd $GITHUB_WORKSPACE/modules/${{ github.event.inputs.environment }}
+          terraform init
+
+      # 5) Terraform Validate
+      - name: Terraform Validate
+        run: |
+          cd $GITHUB_WORKSPACE/modules/${{ github.event.inputs.environment }}
+          terraform validate
+
+      # 6) Terraform Apply
+      - name: Terraform Apply
+        run: |
+          cd $GITHUB_WORKSPACE/modules/${{ github.event.inputs.environment }}
+
+          # Create a tfvars file from the user inputs
+          echo "resource_name              = \"${{ github.event.inputs.resourceName }}\""      >  request.tfvars
+          echo "kind                       = \"${{ github.event.inputs.kind }}\""              >> request.tfvars
+          echo "sku                        = \"${{ github.event.inputs.sku }}\""               >> request.tfvars
+          echo "access_tier                = \"${{ github.event.inputs.accessTier }}\""        >> request.tfvars
+          echo "minimum_tls_version        = \"${{ github.event.inputs.minimumTlsVersion }}\"" >> request.tfvars
+          echo "default_action             = \"${{ github.event.inputs.defaultAction }}\""     >> request.tfvars
+          echo "bypass                     = \"${{ github.event.inputs.bypass }}\""            >> request.tfvars
+          echo "soft_delete_retention_days = \"${{ github.event.inputs.softDeleteRetentionDays }}\"" >> request.tfvars
+
+          # Handle boolean values
+          if [ "${{ github.event.inputs.enableHttpsTrafficOnly }}" = "true" ]; then
+            echo "enable_https_traffic_only = true" >> request.tfvars
+          else
+            echo "enable_https_traffic_only = false" >> request.tfvars
+          fi
+
+          if [ "${{ github.event.inputs.allowBlobPublicAccess }}" = "true" ]; then
+            echo "allow_blob_public_access = true" >> request.tfvars
+          else
+            echo "allow_blob_public_access = false" >> request.tfvars
+          fi
+
+          if [ "${{ github.event.inputs.softDeleteEnabled }}" = "true" ]; then
+            echo "soft_delete_enabled = true" >> request.tfvars
+          else
+            echo "soft_delete_enabled = false" >> request.tfvars
+          fi
+
+          # Apply with the ephemeral tfvars file
+          terraform apply -auto-approve -var-file=request.tfvars
+
+      # 7) Completion
+      - name: Done
+        run: echo "✅ Storage Account provisioned successfully!"
