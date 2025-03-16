@@ -1,229 +1,248 @@
 :root {
-    --primary-color: #0e639c;
-    --primary-hover: #1177be;
-    --secondary-color: #f0f2f5;
-    --text-color: #333333;
-    --border-color: #dfe3e8;
-    --success-color: #2e7d32;
-    --error-color: #d32f2f;
-    --font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  }
-  
-  * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-  }
-  
-  body {
-    font-family: var(--font-family);
-    line-height: 1.6;
-    color: var(--text-color);
-    background-color: #fafbfc;
-    padding: 0;
-    margin: 0;
-  }
-  
-  header {
-    background-color: white;
-    border-bottom: 1px solid var(--border-color);
-    padding: 1rem 2rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  }
-  
-  h1 {
-    font-size: 1.5rem;
-    font-weight: 500;
-    color: var(--primary-color);
-  }
-  
-  h2 {
-    font-size: 1.25rem;
-    font-weight: 500;
-    margin-bottom: 1.5rem;
-    color: var(--text-color);
-  }
-  
-  main {
-    max-width: 960px;
-    margin: 2rem auto;
-    padding: 0 2rem;
-  }
-  
-  button {
-    background-color: var(--primary-color);
-    color: white;
-    border: none;
-    border-radius: 4px;
-    padding: 0.5rem 1rem;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: background-color 0.2s;
-  }
-  
-  button:hover {
-    background-color: var(--primary-hover);
-  }
-  
-  #login-button, #logout-button {
-    background-color: transparent;
-    color: var(--primary-color);
-    border: 1px solid var(--primary-color);
-  }
-  
-  #login-button:hover, #logout-button:hover {
-    background-color: rgba(14, 99, 156, 0.05);
-  }
-  
-  #user-info {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-  }
-  
-  #username {
-    font-size: 0.9rem;
-  }
-  
-  /* Resource selector */
-  #resource-selector {
-    margin-bottom: 2rem;
-  }
-  
-  #resource-buttons {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-  }
-  
-  .resource-button {
-    background-color: white;
-    color: var(--text-color);
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    padding: 1rem 1.5rem;
-    font-size: 1rem;
-    transition: all 0.2s;
-    min-width: 150px;
-    text-align: center;
-  }
-  
-  .resource-button:hover {
-    background-color: var(--secondary-color);
-    border-color: #c2c8d0;
-    color: var(--text-color);
-  }
-  
-  /* Form styling */
-  #resource-form-container {
-    background-color: white;
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    padding: 2rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  }
-  
-  #resource-form {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-  }
-  
-  .form-field {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  
-  label {
-    font-size: 0.9rem;
-    font-weight: 500;
-  }
-  
-  input, select {
-    padding: 0.75rem;
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    font-size: 1rem;
-    width: 100%;
-    max-width: 400px;
-  }
-  
-  input:focus, select:focus {
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px rgba(14, 99, 156, 0.1);
-  }
-  
-  input[type="checkbox"] {
-    width: auto;
-    margin-right: 8px;
-  }
-  
-  #environment-selector {
-    margin-top: 1rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--border-color);
-  }
-  
-  .approval-info {
-    margin-top: 0.5rem;
-    font-size: 0.85rem;
-    color: #666;
-    font-style: italic;
-  }
-  
-  /* Loading and messages */
-  #loading {
-    display: flex;
-    justify-content: center;
-    padding: 2rem;
-  }
-  
-  #result-message {
-    margin-top: 2rem;
-  }
-  
-  .success-message {
-    background-color: rgba(46, 125, 50, 0.05);
-    border: 1px solid rgba(46, 125, 50, 0.2);
-    border-left: 4px solid var(--success-color);
-    border-radius: 4px;
-    padding: 1.5rem;
-  }
-  
-  .error-message {
-    background-color: rgba(211, 47, 47, 0.05);
-    border: 1px solid rgba(211, 47, 47, 0.2);
-    border-left: 4px solid var(--error-color);
-    border-radius: 4px;
-    padding: 1.5rem;
-  }
-  
-  .success-message h3, .error-message h3 {
-    margin-bottom: 0.5rem;
-    font-size: 1.1rem;
-  }
-  
-  .success-message p, .error-message p {
-    margin-bottom: 1rem;
-  }
-  
-  .success-message a {
-    color: var(--success-color);
-    text-decoration: none;
-    font-weight: 500;
-  }
-  
-  .success-message a:hover {
-    text-decoration: underline;
-  }
+  --primary-color: #00678e; /* Tandem teal/blue color */
+  --primary-hover: #007ba9; /* Slightly lighter for hover states */
+  --secondary-color: #f0f2f5;
+  --text-color: #333333;
+  --border-color: #dfe3e8;
+  --success-color: #2e7d32;
+  --error-color: #d32f2f;
+  --font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
 
-  /* Token input form styling - add to your existing styles.css */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
+body {
+  font-family: var(--font-family);
+  line-height: 1.6;
+  color: var(--text-color);
+  background-color: #fafbfc;
+  padding: 0;
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  background-color: white;
+  border-bottom: 1px solid var(--border-color);
+  padding: 1rem 2rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.company-branding {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.company-logo {
+  height: 40px;
+  width: auto;
+}
+
+h1 {
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--primary-color);
+}
+
+h2 {
+  font-size: 1.25rem;
+  font-weight: 500;
+  margin-bottom: 1.5rem;
+  color: var(--text-color);
+}
+
+main {
+  max-width: 960px;
+  margin: 2rem auto;
+  padding: 0 2rem;
+  flex: 1;
+}
+
+button {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+button:hover {
+  background-color: var(--primary-hover);
+}
+
+#login-button, #logout-button {
+  background-color: transparent;
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
+}
+
+#login-button:hover, #logout-button:hover {
+  background-color: rgba(14, 99, 156, 0.05);
+}
+
+#user-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+#username {
+  font-size: 0.9rem;
+}
+
+/* Resource selector */
+#resource-selector {
+  margin-bottom: 2rem;
+}
+
+#resource-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.resource-button {
+  background-color: white;
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 1rem 1.5rem;
+  font-size: 1rem;
+  transition: all 0.2s;
+  min-width: 150px;
+  text-align: center;
+}
+
+.resource-button:hover {
+  background-color: var(--secondary-color);
+  border-color: #c2c8d0;
+  color: var(--text-color);
+}
+
+/* Form styling */
+#resource-form-container {
+  background-color: white;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 2rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+#resource-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+label {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+input, select {
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 1rem;
+  width: 100%;
+  max-width: 400px;
+}
+
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(14, 99, 156, 0.1);
+}
+
+input[type="checkbox"] {
+  width: auto;
+  margin-right: 8px;
+}
+
+#environment-selector {
+  margin-top: 1rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.approval-info {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: #666;
+  font-style: italic;
+}
+
+/* Loading and messages */
+#loading {
+  display: flex;
+  justify-content: center;
+  padding: 2rem;
+}
+
+#result-message {
+  margin-top: 2rem;
+}
+
+.success-message {
+  background-color: rgba(46, 125, 50, 0.05);
+  border: 1px solid rgba(46, 125, 50, 0.2);
+  border-left: 4px solid var(--success-color);
+  border-radius: 4px;
+  padding: 1.5rem;
+}
+
+.error-message {
+  background-color: rgba(211, 47, 47, 0.05);
+  border: 1px solid rgba(211, 47, 47, 0.2);
+  border-left: 4px solid var(--error-color);
+  border-radius: 4px;
+  padding: 1.5rem;
+}
+
+.success-message h3, .error-message h3 {
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+}
+
+.success-message p, .error-message p {
+  margin-bottom: 1rem;
+}
+
+.success-message a {
+  color: var(--success-color);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.success-message a:hover {
+  text-decoration: underline;
+}
+
+/* Token input form styling */
 .token-form {
   background-color: white;
   border: 1px solid var(--border-color);
@@ -294,7 +313,33 @@
   border-left: 4px solid var(--primary-color);
 }
 
-/* The following overrides are optional - to ensure consistency */
+/* Footer styling */
+footer {
+  background-color: white;
+  border-top: 1px solid var(--border-color);
+  padding: 1.5rem 2rem;
+  margin-top: auto;
+}
+
+.footer-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.footer-logo {
+  height: 30px;
+  width: auto;
+}
+
+footer p {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+/* Button styling */
 #submit-pat-button {
   background-color: var(--primary-color);
   color: white;
@@ -313,23 +358,39 @@
   background-color: var(--primary-hover);
 }
   
-  /* Responsive adjustments */
-  @media (max-width: 768px) {
-    header {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 1rem;
-    }
-    
-    #resource-form-container {
-      padding: 1.5rem;
-    }
-    
-    #resource-buttons {
-      flex-direction: column;
-    }
-    
-    .resource-button {
-      width: 100%;
-    }
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .header-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
   }
+
+  .company-branding {
+    margin-bottom: 0.5rem;
+  }
+
+  #user-info {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  #resource-form-container {
+    padding: 1.5rem;
+  }
+  
+  #resource-buttons {
+    flex-direction: column;
+  }
+  
+  .resource-button {
+    width: 100%;
+  }
+
+  .footer-content {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 1rem;
+  }
+}
