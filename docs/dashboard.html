@@ -4,7 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Infrastructure Self-Service Portal</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
     <style>
       :root {
         --tandem-blue: #00678e;
@@ -13,21 +16,22 @@
         --text-color: #333;
         --border-color: #e0e4e8;
       }
-      
+
       * {
         box-sizing: border-box;
         margin: 0;
         padding: 0;
       }
-      
+
       body {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+          Roboto, sans-serif;
         line-height: 1.6;
         color: var(--text-color);
         background-color: var(--background-color);
         margin: 0;
       }
-      
+
       /* Sticky header */
       .header {
         background-color: var(--tandem-blue);
@@ -37,41 +41,41 @@
         top: 0;
         z-index: 10;
       }
-      
+
       .header-container {
         display: flex;
         justify-content: space-between;
         align-items: center;
       }
-      
+
       .header-left {
         display: flex;
         align-items: center;
       }
-      
+
       .logo {
         height: 30px;
         width: auto;
         margin-right: 1rem;
       }
-      
+
       .header-title {
         color: white;
         font-size: 1.2rem;
         font-weight: 500;
       }
-      
+
       #user-info {
         display: flex;
         align-items: center;
         gap: 1rem;
       }
-      
+
       #username {
         color: white;
         font-size: 0.95rem;
       }
-      
+
       #login-button {
         background-color: white;
         color: var(--tandem-blue);
@@ -82,7 +86,7 @@
         cursor: pointer;
         display: none;
       }
-      
+
       #logout-button {
         background-color: transparent;
         color: white;
@@ -92,31 +96,31 @@
         font-size: 0.9rem;
         cursor: pointer;
       }
-      
+
       /* Main content */
       .main-content {
         max-width: 1200px;
         margin: 2rem auto;
         padding: 0 2rem;
       }
-      
+
       /* App title */
       .app-title-container {
         margin-bottom: 2rem;
       }
-      
+
       .app-title {
         font-size: 1.5rem;
         font-weight: 600;
         color: var(--tandem-blue);
         margin-bottom: 0.5rem;
       }
-      
+
       .app-description {
         color: #666;
         font-size: 0.95rem;
       }
-      
+
       /* Loading indicator */
       #loading {
         display: none;
@@ -125,7 +129,7 @@
         justify-content: center;
         margin: 3rem 0;
       }
-      
+
       /* Resource selector */
       #resource-selector {
         background-color: white;
@@ -135,19 +139,19 @@
         margin-bottom: 2rem;
         display: none;
       }
-      
+
       #resource-selector h2 {
         color: var(--tandem-blue);
         font-size: 1.25rem;
         margin-bottom: 1.5rem;
       }
-      
+
       #resource-buttons {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
         gap: 1.5rem;
       }
-      
+
       .resource-button {
         background-color: white;
         border: 1px solid var(--border-color);
@@ -160,13 +164,13 @@
         cursor: pointer;
         transition: all 0.2s ease;
       }
-      
+
       .resource-button:hover {
         border-color: var(--tandem-blue);
         color: var(--tandem-blue);
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
       }
-      
+
       /* Form container */
       #resource-form-container {
         background-color: white;
@@ -175,23 +179,23 @@
         padding: 2rem;
         display: none;
       }
-      
+
       #form-title {
         color: var(--tandem-blue);
         font-size: 1.25rem;
         margin-bottom: 1.5rem;
       }
-      
+
       .form-field {
         margin-bottom: 1.5rem;
       }
-      
+
       .form-field label {
         display: block;
         margin-bottom: 0.5rem;
         font-weight: 500;
       }
-      
+
       .form-field input,
       .form-field select {
         width: 100%;
@@ -200,12 +204,12 @@
         border-radius: 4px;
         font-size: 0.95rem;
       }
-      
+
       .form-field input[type="checkbox"] {
         width: auto;
         margin-right: 0.5rem;
       }
-      
+
       /* Help text */
       .help-text {
         font-size: 0.85rem;
@@ -213,7 +217,7 @@
         margin-top: 0.3rem;
         margin-bottom: 0.5rem;
       }
-      
+
       /* Section headers */
       .section-header {
         font-size: 1.1rem;
@@ -223,20 +227,20 @@
         padding-bottom: 0.5rem;
         border-bottom: 1px solid var(--border-color);
       }
-      
+
       /* Environment selector */
       #environment-selector {
         margin-top: 2rem;
         padding-top: 1rem;
         border-top: 1px solid var(--border-color);
       }
-      
+
       #environment-selector label {
         display: block;
         margin-bottom: 0.5rem;
         font-weight: 500;
       }
-      
+
       #environment-selector select {
         width: 100%;
         padding: 0.75rem;
@@ -244,13 +248,13 @@
         border-radius: 4px;
         font-size: 0.95rem;
       }
-      
+
       .approval-info {
         margin-top: 0.5rem;
         color: #e67e22;
         font-size: 0.9rem;
       }
-      
+
       /* Form submit button */
       #resource-form button[type="submit"] {
         background-color: var(--tandem-blue);
@@ -262,12 +266,12 @@
         cursor: pointer;
         font-weight: 500;
       }
-      
+
       /* Result message */
       #result-message {
         margin-top: 2rem;
       }
-      
+
       .success-message {
         background-color: #e8f5e9;
         border: 1px solid #c8e6c9;
@@ -275,16 +279,16 @@
         border-radius: 4px;
         padding: 1.5rem;
       }
-      
+
       .success-message h3 {
         color: #2e7d32;
         margin-bottom: 1rem;
       }
-      
+
       .success-message p {
         margin-bottom: 0.75rem;
       }
-      
+
       .success-message a {
         color: var(--tandem-blue);
         text-decoration: none;
@@ -292,11 +296,11 @@
         display: inline-block;
         margin-top: 0.5rem;
       }
-      
+
       .success-message a:hover {
         text-decoration: underline;
       }
-      
+
       .success-message button {
         background-color: var(--tandem-blue);
         color: white;
@@ -307,7 +311,7 @@
         cursor: pointer;
         margin-top: 1rem;
       }
-      
+
       .error-message {
         background-color: #ffebee;
         border: 1px solid #ffcdd2;
@@ -315,12 +319,12 @@
         border-radius: 4px;
         padding: 1.5rem;
       }
-      
+
       .error-message h3 {
         color: #c62828;
         margin-bottom: 1rem;
       }
-      
+
       .error-message button {
         background-color: var(--tandem-blue);
         color: white;
@@ -331,16 +335,18 @@
         cursor: pointer;
         margin-top: 1rem;
       }
-      
-      .message, .info-message {
+
+      .message,
+      .info-message {
         background-color: #e3f2fd;
         border: 1px solid #bbdefb;
         border-left: 4px solid #2196f3;
         border-radius: 4px;
         padding: 1.5rem;
       }
-      
-      .message button, .info-message button {
+
+      .message button,
+      .info-message button {
         background-color: var(--tandem-blue);
         color: white;
         border: none;
@@ -350,31 +356,32 @@
         cursor: pointer;
         margin-top: 1rem;
       }
-      
+
       /* Token form */
       .token-form {
         margin-top: 1rem;
       }
-      
+
       .token-form h3 {
         font-size: 1.3rem;
         color: var(--tandem-blue);
         margin-bottom: 1rem;
       }
-      
+
       .token-form p {
         margin-bottom: 1rem;
       }
-      
-      .token-form ul, .token-form ol {
+
+      .token-form ul,
+      .token-form ol {
         margin-left: 1.5rem;
         margin-bottom: 1.5rem;
       }
-      
+
       .token-form li {
         margin-bottom: 0.5rem;
       }
-      
+
       .token-form code {
         background-color: #f0f2f5;
         padding: 0.15rem 0.4rem;
@@ -383,13 +390,13 @@
         font-size: 0.9em;
         color: var(--tandem-blue);
       }
-      
+
       .token-input {
         margin-top: 1.5rem;
         display: flex;
         gap: 0.5rem;
       }
-      
+
       .token-input input {
         flex: 1;
         padding: 0.75rem;
@@ -397,7 +404,7 @@
         border-radius: 4px;
         font-size: 0.9rem;
       }
-      
+
       .token-input .btn,
       .token-input button {
         background-color: var(--tandem-blue);
@@ -415,7 +422,11 @@
     <header class="header">
       <div class="header-container">
         <div class="header-left">
-          <img src="./docs/assets/tandem-diabetes-logo.png" alt="Tandem Diabetes Care Logo" class="logo" />
+          <img
+            src="./docs/assets/tandem-diabetes-logo.png"
+            alt="Tandem Diabetes Care Logo"
+            class="logo"
+          />
           <h1 class="header-title">Tandem Internal Tools</h1>
         </div>
         <div id="user-info">
@@ -425,15 +436,17 @@
         </div>
       </div>
     </header>
-    
+
     <!-- Main content -->
     <main class="main-content">
       <!-- App title -->
       <div class="app-title-container">
         <h1 class="app-title">Infrastructure Self-Service Portal</h1>
-        <p class="app-description">Create and manage infrastructure resources</p>
+        <p class="app-description">
+          Create and manage infrastructure resources
+        </p>
       </div>
-      
+
       <!-- Loading indicator -->
       <div id="loading">
         <svg
@@ -459,15 +472,15 @@
             </g>
           </g>
         </svg>
-        <div style="margin-top: 10px;">Loading your information...</div>
+        <div style="margin-top: 10px">Loading your information...</div>
       </div>
-      
+
       <!-- Resource selector -->
       <div id="resource-selector">
         <h2>Select Resource Type</h2>
         <div id="resource-buttons"></div>
       </div>
-      
+
       <!-- Form container -->
       <div id="resource-form-container">
         <h2 id="form-title">Create Resource</h2>
@@ -479,11 +492,11 @@
           </div>
         </form>
       </div>
-      
+
       <!-- Result message container -->
       <div id="result-message"></div>
     </main>
-    
+
     <!-- Load scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
     <script src="/infra-self-service/js/auth.js"></script>
