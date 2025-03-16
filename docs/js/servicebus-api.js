@@ -21,25 +21,28 @@ async function submitServiceBusRequest() {
         console.log('Service Bus workflow inputs:', workflowInputs);
         
         // Trigger GitHub Actions workflow
-        const response = await fetch('https://api.github.com/repos/labenagha/infra-self-service/actions/workflows/provision-servicebus.yml/dispatches', {
-            method: 'POST',
-            headers: {
-                'Authorization': `token ${token}`,
-                'Accept': 'application/vnd.github.v3+json',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                ref: 'main', // or your default branch
-                inputs: workflowInputs
-            })
-        });
+        const response = await fetch(
+            'https://api.github.com/repos/labenagha/infra-self-service/actions/workflows/provision-servicebus.yml/dispatches',
+            {
+                method: 'POST',
+                headers: {
+                    'Authorization': `token ${token}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    ref: 'main', // or your default branch
+                    inputs: workflowInputs
+                })
+            }
+        );
         
         if (!response.ok) {
             const errorText = await response.text();
             throw new Error(`GitHub API error (${response.status}): ${errorText}`);
         }
         
-        // Show success message with direct link to the workflow runs
+        // Show success message with link to GitHub Actions
         document.getElementById('result-message').innerHTML = `
             <div class="success-message">
                 <h3>Service Bus Topic Request Submitted Successfully!</h3>
@@ -47,12 +50,11 @@ async function submitServiceBusRequest() {
                 <p><strong>Name:</strong> ${formData.get('name')}</p>
                 <p><strong>Environment:</strong> ${formData.get('environment')}</p>
                 <p>
-                    You can check the progress in GitHub Actions: 
-                    <a href="https://github.com/labenagha/infra-self-service/actions?query=workflow%3A%22Provision+Service+Bus+Topic%22+branch%3Amain"
-                       target="_blank"
-                    >
-                        View GitHub Actions job
-                    </a>
+                  You can check the progress in GitHub Actions here: 
+                  <a
+                    href="https://github.com/labenagha/infra-self-service/actions?query=workflow%3A%22Provision+Service+Bus+Topic%22+branch%3Amain"
+                    target="_blank"
+                    >View Provision Service Bus Topic workflow</a>
                 </p>
                 <button id="new-request-button">Create Another Request</button>
             </div>
