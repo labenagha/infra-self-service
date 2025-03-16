@@ -7,19 +7,26 @@
         "description": "Name of the Azure Storage Account (must be globally unique, 3-24 characters, lowercase letters and numbers only)",
         "pattern": "^[a-z0-9]{3,24}$"
       },
-      "kind": {
+      "accountKind": {
         "type": "string",
         "title": "Storage Account Kind",
         "description": "Type of storage account",
         "default": "StorageV2",
         "enum": ["BlobStorage", "BlockBlobStorage", "FileStorage", "Storage", "StorageV2"]
       },
-      "sku": {
+      "accountTier": {
         "type": "string",
-        "title": "Performance Tier",
-        "description": "Performance and redundancy configuration",
-        "default": "Standard_LRS",
-        "enum": ["Standard_LRS", "Standard_GRS", "Standard_RAGRS", "Standard_ZRS", "Premium_LRS", "Premium_ZRS"]
+        "title": "Account Tier",
+        "description": "Performance tier for the storage account",
+        "default": "Standard",
+        "enum": ["Standard", "Premium"]
+      },
+      "accountReplicationType": {
+        "type": "string",
+        "title": "Replication Type",
+        "description": "Type of replication to use for this storage account",
+        "default": "LRS",
+        "enum": ["LRS", "GRS", "RAGRS", "ZRS", "GZRS", "RAGZRS"]
       },
       "accessTier": {
         "type": "string",
@@ -28,7 +35,7 @@
         "default": "Hot",
         "enum": ["Hot", "Cool"]
       },
-      "enableHttpsTrafficOnly": {
+      "httpsTrafficOnlyEnabled": {
         "type": "boolean",
         "title": "Enable Secure Transfer (HTTPS Only)",
         "default": true
@@ -39,10 +46,15 @@
         "default": "TLS1_2",
         "enum": ["TLS1_0", "TLS1_1", "TLS1_2"]
       },
-      "allowBlobPublicAccess": {
+      "publicNetworkAccessEnabled": {
         "type": "boolean",
-        "title": "Allow Blob Public Access",
+        "title": "Allow Public Network Access",
         "default": false
+      },
+      "sharedAccessKeyEnabled": {
+        "type": "boolean",
+        "title": "Enable Shared Access Key Authentication",
+        "default": true
       },
       "networkRuleSet": {
         "type": "object",

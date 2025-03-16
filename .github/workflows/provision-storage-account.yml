@@ -4,122 +4,146 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Environment (e.g. dev or test)'
+        description: 'Target Environment'
         required: true
+        type: string
       resourceName:
         description: 'Storage Account Name'
         required: true
-      kind:
+        type: string
+      accountKind:
         description: 'Storage Account Kind'
         required: false
         default: 'StorageV2'
-      sku:
-        description: 'Performance Tier'
+        type: string
+      accountTier:
+        description: 'Account Tier'
         required: false
-        default: 'Standard_LRS'
+        default: 'Standard'
+        type: string
+      accountReplicationType:
+        description: 'Account Replication Type'
+        required: false
+        default: 'LRS'
+        type: string
       accessTier:
-        description: 'Access Tier (Hot or Cool)'
+        description: 'Access Tier'
         required: false
         default: 'Hot'
+        type: string
+      httpsTrafficOnlyEnabled:
+        description: 'HTTPS Traffic Only'
+        required: false
+        default: 'true'
+        type: string
       minimumTlsVersion:
         description: 'Minimum TLS Version'
         required: false
         default: 'TLS1_2'
+        type: string
+      publicNetworkAccessEnabled:
+        description: 'Public Network Access'
+        required: false
+        default: 'false'
+        type: string
+      sharedAccessKeyEnabled:
+        description: 'Shared Access Key Enabled'
+        required: false
+        default: 'true'
+        type: string
       defaultAction:
-        description: 'Default Network Access (Allow/Deny)'
+        description: 'Network Default Action'
         required: false
         default: 'Deny'
+        type: string
       bypass:
-        description: 'Network Rule Bypass'
+        description: 'Network Bypass'
         required: false
         default: 'AzureServices'
-      boolConfig:
-        description: 'JSON object with enableHttpsTrafficOnly and allowBlobPublicAccess, e.g. {"enableHttpsTrafficOnly":"true","allowBlobPublicAccess":"false"}'
+        type: string
+      softDeleteEnabled:
+        description: 'Soft Delete Enabled'
         required: false
-        default: '{"enableHttpsTrafficOnly":"true","allowBlobPublicAccess":"false"}'
-      softDeleteConfig:
-        description: 'JSON object with softDeleteEnabled and softDeleteRetentionDays, e.g. {"softDeleteEnabled":"true","softDeleteRetentionDays":"7"}'
+        default: 'true'
+        type: string
+      softDeleteRetentionDays:
+        description: 'Soft Delete Retention Days'
         required: false
-        default: '{"softDeleteEnabled":"true","softDeleteRetentionDays":"7"}'
+        default: '7'
+        type: string
 
 jobs:
-  provision_storage_account:
+  provision:
+    name: Provision Storage Account
     runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    
     steps:
-      # 1) Check out the repository
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      # 2) Azure Login (Service Principal via JSON creds)
-      - name: Azure Login
-        uses: azure/login@v2
-        with:
-          # Save your SP credentials in the secret: AZURE_CREDENTIALS
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-          enable-AzPSSession: true
-
-      # 3) Setup Terraform
+      - uses: actions/checkout@v3
+      
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
-
-      # 4) Terraform Init
+        with:
+          terraform_version: 1.3.0
+      
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
       - name: Terraform Init
         run: |
-          cd $GITHUB_WORKSPACE/modules/${{ github.event.inputs.environment }}
+          cd terraform/environments/${{ github.event.inputs.environment }}
           terraform init
-
-      # 5) Terraform Validate
-      - name: Terraform Validate
+      
+      - name: Create Terraform Variables File
         run: |
-          cd $GITHUB_WORKSPACE/modules/${{ github.event.inputs.environment }}
-          terraform validate
-
-      # 6) Terraform Apply
+          cd terraform/environments/${{ github.event.inputs.environment }}
+          cat > storage-account.auto.tfvars <<EOF
+          storage_account_name               = "${{ github.event.inputs.resourceName }}"
+          account_kind                       = "${{ github.event.inputs.accountKind }}"
+          account_tier                       = "${{ github.event.inputs.accountTier }}"
+          account_replication_type           = "${{ github.event.inputs.accountReplicationType }}"
+          access_tier                        = "${{ github.event.inputs.accessTier }}"
+          https_traffic_only_enabled         = ${{ github.event.inputs.httpsTrafficOnlyEnabled }}
+          minimum_tls_version                = "${{ github.event.inputs.minimumTlsVersion }}"
+          public_network_access_enabled      = ${{ github.event.inputs.publicNetworkAccessEnabled }}
+          shared_access_key_enabled          = ${{ github.event.inputs.sharedAccessKeyEnabled }}
+          default_action                     = "${{ github.event.inputs.defaultAction }}"
+          bypass                             = ["${{ github.event.inputs.bypass }}"]
+          soft_delete_enabled                = ${{ github.event.inputs.softDeleteEnabled }}
+          soft_delete_retention_days         = ${{ github.event.inputs.softDeleteRetentionDays }}
+          EOF
+      
+      - name: Terraform Plan
+        id: plan
+        run: |
+          cd terraform/environments/${{ github.event.inputs.environment }}
+          terraform plan -out=tfplan
+      
       - name: Terraform Apply
+        id: apply
+        if: success()
         run: |
-          cd $GITHUB_WORKSPACE/modules/${{ github.event.inputs.environment }}
-          # Create a temporary tfvars file from the user inputs
-          echo "resource_name              = \"${{ github.event.inputs.resourceName }}\""      >  request.tfvars
-          echo "kind                       = \"${{ github.event.inputs.kind }}\""              >> request.tfvars
-          echo "sku                        = \"${{ github.event.inputs.sku }}\""               >> request.tfvars
-          echo "access_tier                = \"${{ github.event.inputs.accessTier }}\""        >> request.tfvars
-          echo "minimum_tls_version        = \"${{ github.event.inputs.minimumTlsVersion }}\"" >> request.tfvars
-          echo "default_action             = \"${{ github.event.inputs.defaultAction }}\""     >> request.tfvars
-          echo "bypass                     = \"${{ github.event.inputs.bypass }}\""            >> request.tfvars
-
-          # Parse boolConfig (enableHttpsTrafficOnly / allowBlobPublicAccess)
-          echo '${{ github.event.inputs.boolConfig }}' > boolConfig.json
-          enableHttpsTrafficOnly=$(jq -r '.enableHttpsTrafficOnly' boolConfig.json)
-          allowBlobPublicAccess=$(jq -r '.allowBlobPublicAccess' boolConfig.json)
-
-          if [ "$enableHttpsTrafficOnly" = "true" ]; then
-            echo "enable_https_traffic_only = true" >> request.tfvars
-          else
-            echo "enable_https_traffic_only = false" >> request.tfvars
-          fi
-
-          if [ "$allowBlobPublicAccess" = "true" ]; then
-            echo "allow_blob_public_access = true" >> request.tfvars
-          else
-            echo "allow_blob_public_access = false" >> request.tfvars
-          fi
-
-          # Parse softDeleteConfig (softDeleteEnabled / softDeleteRetentionDays)
-          echo '${{ github.event.inputs.softDeleteConfig }}' > softDeleteConfig.json
-          softDeleteEnabled=$(jq -r '.softDeleteEnabled' softDeleteConfig.json)
-          softDeleteRetentionDays=$(jq -r '.softDeleteRetentionDays' softDeleteConfig.json)
-
-          if [ "$softDeleteEnabled" = "true" ]; then
-            echo "soft_delete_enabled = true" >> request.tfvars
-          else
-            echo "soft_delete_enabled = false" >> request.tfvars
-          fi
-
-          echo "soft_delete_retention_days = \"$softDeleteRetentionDays\"" >> request.tfvars
-
-          # Apply using the ephemeral tfvars file
-          terraform apply -auto-approve -var-file=request.tfvars
-
-      # 7) Completion
-      - name: Done
-        run: echo "✅ Storage Account provisioned successfully!"
+          cd terraform/environments/${{ github.event.inputs.environment }}
+          terraform apply -auto-approve tfplan
+      
+      - name: Create PR for State Changes
+        if: success()
+        uses: peter-evans/create-pull-request@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Add Storage Account ${{ github.event.inputs.resourceName }} to ${{ github.event.inputs.environment }}"
+          title: "Add Storage Account ${{ github.event.inputs.resourceName }} to ${{ github.event.inputs.environment }}"
+          body: |
+            This PR was automatically created by the Infrastructure Self-Service Portal.
+            
+            Storage Account Details:
+            - Name: ${{ github.event.inputs.resourceName }}
+            - Environment: ${{ github.event.inputs.environment }}
+            - Kind: ${{ github.event.inputs.accountKind }}
+            - Access Tier: ${{ github.event.inputs.accessTier }}
+            
+            Requested by: ${{ github.actor }}
+          branch: add-storage-account-${{ github.event.inputs.resourceName }}
+          base: main
