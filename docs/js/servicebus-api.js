@@ -39,14 +39,21 @@ async function submitServiceBusRequest() {
             throw new Error(`GitHub API error (${response.status}): ${errorText}`);
         }
         
-        // Show success message
+        // Show success message with direct link to the workflow runs
         document.getElementById('result-message').innerHTML = `
             <div class="success-message">
                 <h3>Service Bus Topic Request Submitted Successfully!</h3>
                 <p>Your Service Bus Topic request has been submitted to GitHub Actions for provisioning.</p>
-                <p>Name: ${formData.get('name')}</p>
-                <p>Environment: ${formData.get('environment')}</p>
-                <p>You can check the progress in GitHub Actions.</p>
+                <p><strong>Name:</strong> ${formData.get('name')}</p>
+                <p><strong>Environment:</strong> ${formData.get('environment')}</p>
+                <p>
+                    You can check the progress in GitHub Actions: 
+                    <a href="https://github.com/labenagha/infra-self-service/actions?query=workflow%3A%22Provision+Service+Bus+Topic%22+branch%3Amain"
+                       target="_blank"
+                    >
+                        View GitHub Actions job
+                    </a>
+                </p>
                 <button id="new-request-button">Create Another Request</button>
             </div>
         `;
