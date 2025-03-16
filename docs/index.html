@@ -1,79 +1,98 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Infrastructure Self-Service Portal</title>
     <!-- Use relative paths for GitHub Pages -->
-    <link rel="stylesheet" href="/infra-self-service/css/styles.css">
+    <link rel="stylesheet" href="/infra-self-service/css/styles.css" />
     <!-- Add a professional font -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
     <!-- Add a script to handle the callback URL -->
     <script>
-        // This ensures the callback URL works with GitHub Pages
-        (function() {
-            // Check if we're at the root path but should be showing the callback handler
-            if (window.location.search.includes('code=') && !window.location.pathname.includes('/auth/github/callback')) {
-                // Store the code
-                const urlParams = new URLSearchParams(window.location.search);
-                const code = urlParams.get('code');
-                
-                if (code) {
-                    // Simulate being on the callback URL
-                    sessionStorage.setItem('github_auth_code', code);
-                    console.log('OAuth code detected, processing login...');
-                }
-            }
-        })();
+      // This ensures the callback URL works with GitHub Pages
+      (function () {
+        // Check if we're at the root path but should be showing the callback handler
+        if (
+          window.location.search.includes("code=") &&
+          !window.location.pathname.includes("/auth/github/callback")
+        ) {
+          // Store the code
+          const urlParams = new URLSearchParams(window.location.search);
+          const code = urlParams.get("code");
+
+          if (code) {
+            // Simulate being on the callback URL
+            sessionStorage.setItem("github_auth_code", code);
+            console.log("OAuth code detected, processing login...");
+          }
+        }
+      })();
     </script>
-</head>
-<body>
+  </head>
+  <body>
     <header>
-        <h1>Infrastructure Self-Service Portal</h1>
-        <div id="user-info">
-            <span id="username">Not logged in</span>
-            <button id="login-button">Login with GitHub</button>
-            <button id="logout-button" style="display:none">Logout</button>
-        </div>
+      <h1>Infrastructure Self-Service Portal</h1>
+      <div id="user-info">
+        <span id="username">Not logged in</span>
+        <button id="login-button">Login with GitHub</button>
+        <button id="logout-button" style="display: none">Logout</button>
+      </div>
     </header>
-    
+
     <main>
-        <div id="loading" style="display:none">
-            <svg width="38" height="38" viewBox="0 0 38 38" xmlns="http://www.w3.org/2000/svg" stroke="#0e639c">
-                <g fill="none" fill-rule="evenodd">
-                    <g transform="translate(1 1)" stroke-width="2">
-                        <circle stroke-opacity=".5" cx="18" cy="18" r="18"/>
-                        <path d="M36 18c0-9.94-8.06-18-18-18">
-                            <animateTransform attributeName="transform" type="rotate" from="0 18 18" to="360 18 18" dur="1s" repeatCount="indefinite"/>
-                        </path>
-                    </g>
-                </g>
-            </svg>
-        </div>
-        
-        <div id="resource-selector" style="display:none">
-            <h2>Select Resource Type</h2>
-            <div id="resource-buttons"></div>
-        </div>
-        
-        <div id="resource-form-container" style="display:none">
-            <h2 id="form-title">Create Resource</h2>
-            <form id="resource-form">
-                <div id="form-fields"></div>
-                <div id="environment-selector"></div>
-                <div style="margin-top: 1.5rem;">
-                    <button type="submit">Submit Request</button>
-                </div>
-            </form>
-        </div>
-        
-        <div id="result-message"></div>
+      <div id="loading" style="display: none">
+        <svg
+          width="38"
+          height="38"
+          viewBox="0 0 38 38"
+          xmlns="http://www.w3.org/2000/svg"
+          stroke="#0e639c"
+        >
+          <g fill="none" fill-rule="evenodd">
+            <g transform="translate(1 1)" stroke-width="2">
+              <circle stroke-opacity=".5" cx="18" cy="18" r="18" />
+              <path d="M36 18c0-9.94-8.06-18-18-18">
+                <animateTransform
+                  attributeName="transform"
+                  type="rotate"
+                  from="0 18 18"
+                  to="360 18 18"
+                  dur="1s"
+                  repeatCount="indefinite"
+                />
+              </path>
+            </g>
+          </g>
+        </svg>
+      </div>
+
+      <div id="resource-selector" style="display: none">
+        <h2>Select Resource Type</h2>
+        <div id="resource-buttons"></div>
+      </div>
+
+      <div id="resource-form-container" style="display: none">
+        <h2 id="form-title">Create Resource</h2>
+        <form id="resource-form">
+          <div id="form-fields"></div>
+          <div id="environment-selector"></div>
+          <div style="margin-top: 1.5rem">
+            <button type="submit">Submit Request</button>
+          </div>
+        </form>
+      </div>
+
+      <div id="result-message"></div>
     </main>
-    
+
     <!-- Use relative paths for GitHub Pages -->
     <script src="/infra-self-service/js/auth.js"></script>
-    <script src="/infra-self-service/js/servicebus-form.js"></script>
+    <script src="/infra-self-service/js/service-bus-form.js"></script>
     <script src="/infra-self-service/js/servicebus-api.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
-</body>
+  </body>
 </html>
