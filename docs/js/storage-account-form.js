@@ -5,11 +5,16 @@ function loadStorageAccountForm(permissions) {
   
     document.getElementById("form-title").textContent = "Create Storage Account";
   
-    // Fetch the Storage Account schema
+    // Fetch the Storage Account schema - Using the correct path based on service-bus example
     fetch(
       "https://labenagha.github.io/infra-self-service/config/resource-templates/storage-account/schema.json"
     )
-      .then((response) => response.json())
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Failed to load schema: ${response.status} ${response.statusText}`);
+        }
+        return response.json();
+      })
       .then((schema) => {
         // Create form fields based on schema
         Object.entries(schema.properties).forEach(([fieldName, fieldConfig]) => {
@@ -171,139 +176,145 @@ function loadStorageAccountForm(permissions) {
       })
       .catch((error) => {
         console.error("Error loading Storage Account form:", error);
-        document.getElementById("result-message").textContent = "Error loading Storage Account form";
+        document.getElementById("result-message").innerHTML = `
+          <div class="error-message">
+            <h3>Error Loading Form</h3>
+            <p>Unable to load the Storage Account form: ${error.message}</p>
+            <p>Please ensure the schema file is available at the correct location.</p>
+            <button id="try-again-button">Back to Resource Selection</button>
+          </div>
+        `;
+        
+        document.getElementById("try-again-button").addEventListener("click", () => {
+          document.getElementById("result-message").textContent = "";
+          document.getElementById("resource-selector").style.display = "block";
+        });
       });
-  }
+}
+
+// Helper function to format field names
+function formatFieldName(camelCase) {
+  return camelCase.replace(/([A-Z])/g, " $1").trim();
+}
+
+// Helper functions to create form fields
+function addSelectField(container, fieldName, labelText, options, defaultValue) {
+  const fieldContainer = document.createElement("div");
+  fieldContainer.className = "form-field";
   
-  // Helper function to format field names
-  function formatFieldName(camelCase) {
-    return camelCase.replace(/([A-Z])/g, " $1").trim();
-  }
+  const label = document.createElement("label");
+  label.textContent = labelText;
+  label.setAttribute("for", fieldName);
   
-  // Helper functions to create form fields
-  function addSelectField(container, fieldName, labelText, options, defaultValue) {
-    const fieldContainer = document.createElement("div");
-    fieldContainer.className = "form-field";
-    
-    const label = document.createElement("label");
-    label.textContent = labelText;
-    label.setAttribute("for", fieldName);
-    
-    const select = document.createElement("select");
-    select.id = fieldName;
-    select.name = fieldName;
-    
-    options.forEach(option => {
-      const optionElement = document.createElement("option");
-      optionElement.value = option;
-      optionElement.textContent = option;
-      if (defaultValue === option) {
-        optionElement.selected = true;
-      }
-      select.appendChild(optionElement);
-    });
-    
-    fieldContainer.appendChild(label);
-    fieldContainer.appendChild(select);
-    container.appendChild(fieldContainer);
-  }
+  const select = document.createElement("select");
+  select.id = fieldName;
+  select.name = fieldName;
   
-  function addBooleanField(container, fieldName, labelText, defaultValue) {
-    const fieldContainer = document.createElement("div");
-    fieldContainer.className = "form-field";
-    
-    const label = document.createElement("label");
-    label.textContent = labelText;
-    label.setAttribute("for", fieldName);
-    
-    const input = document.createElement("input");
-    input.type = "checkbox";
-    input.id = fieldName;
-    input.name = fieldName;
-    
-    if (defaultValue === true) {
-      input.checked = true;
+  options.forEach(option => {
+    const optionElement = document.createElement("option");
+    optionElement.value = option;
+    optionElement.textContent = option;
+    if (defaultValue === option) {
+      optionElement.selected = true;
     }
-    
-    fieldContainer.appendChild(label);
-    fieldContainer.appendChild(input);
-    container.appendChild(fieldContainer);
-  }
-  
-  function addNumericField(container, fieldName, labelText, defaultValue, min, max) {
-    const fieldContainer = document.createElement("div");
-    fieldContainer.className = "form-field";
-    
-    const label = document.createElement("label");
-    label.textContent = labelText;
-    label.setAttribute("for", fieldName);
-    
-    const input = document.createElement("input");
-    input.type = "number";
-    input.id = fieldName;
-    input.name = fieldName;
-    input.value = defaultValue;
-    
-    if (min !== undefined) input.min = min;
-    if (max !== undefined) input.max = max;
-    
-    fieldContainer.appendChild(label);
-    fieldContainer.appendChild(input);
-    container.appendChild(fieldContainer);
-  }
-  
-  function loadStorageAccountEnvironmentSelector(permissions) {
-    const envSelector = document.getElementById("environment-selector");
-    envSelector.innerHTML = "<label>Target Environment:</label>";
-  
-    const select = document.createElement("select");
-    select.id = "environment";
-    select.name = "environment";
-  
-    // Get available environments based on permissions
-    let environments = [];
-    if (userPermissions === "admin") {
-      environments = permissions.teams["cie-team"].environments;
-    } else if (userPermissions === "contributor") {
-      environments = permissions.teams["epo-team"].environments;
-    }
-  
-    environments.forEach((env) => {
-      const option = document.createElement("option");
-      option.value = env;
-      option.textContent = env;
-      select.appendChild(option);
-    });
-  
-    envSelector.appendChild(select);
-  
-    // Add approval indication
-    const approvalInfo = document.createElement("div");
-    approvalInfo.className = "approval-info";
-    approvalInfo.innerHTML = "&nbsp;";
-  
-    select.addEventListener("change", () => {
-      const selectedEnv = select.value;
-      if (
-        userPermissions === "contributor" &&
-        permissions.teams["epo-team"].approval_required &&
-        permissions.teams["epo-team"].approval_required[selectedEnv]
-      ) {
-        approvalInfo.textContent = "* Requires approval from CIE team";
-      } else {
-        approvalInfo.innerHTML = "&nbsp;";
-      }
-    });
-  
-    // Trigger initial display
-    const event = new Event("change");
-    select.dispatchEvent(event);
-  
-    envSelector.appendChild(approvalInfo);
-  }
-  
-  // Set up form submission
-  document.getElementById("resource-form").addEventListener("submit", function (event) {
-    event.preventDefault();
-    submitStorageAccountRequest();
+    select.appendChild(optionElement);
   });
+  
+  fieldContainer.appendChild(label);
+  fieldContainer.appendChild(select);
+  container.appendChild(fieldContainer);
+}
+
+function addBooleanField(container, fieldName, labelText, defaultValue) {
+  const fieldContainer = document.createElement("div");
+  fieldContainer.className = "form-field";
+  
+  const label = document.createElement("label");
+  label.textContent = labelText;
+  label.setAttribute("for", fieldName);
+  
+  const input = document.createElement("input");
+  input.type = "checkbox";
+  input.id = fieldName;
+  input.name = fieldName;
+  
+  if (defaultValue === true) {
+    input.checked = true;
+  }
+  
+  fieldContainer.appendChild(label);
+  fieldContainer.appendChild(input);
+  container.appendChild(fieldContainer);
+}
+
+function addNumericField(container, fieldName, labelText, defaultValue, min, max) {
+  const fieldContainer = document.createElement("div");
+  fieldContainer.className = "form-field";
+  
+  const label = document.createElement("label");
+  label.textContent = labelText;
+  label.setAttribute("for", fieldName);
+  
+  const input = document.createElement("input");
+  input.type = "number";
+  input.id = fieldName;
+  input.name = fieldName;
+  input.value = defaultValue;
+  
+  if (min !== undefined) input.min = min;
+  if (max !== undefined) input.max = max;
+  
+  fieldContainer.appendChild(label);
+  fieldContainer.appendChild(input);
+  container.appendChild(fieldContainer);
+}
+
+function loadStorageAccountEnvironmentSelector(permissions) {
+  const envSelector = document.getElementById("environment-selector");
+  envSelector.innerHTML = "<label>Target Environment:</label>";
+
+  const select = document.createElement("select");
+  select.id = "environment";
+  select.name = "environment";
+
+  // Get available environments based on permissions
+  let environments = [];
+  if (userPermissions === "admin") {
+    environments = permissions.teams["cie-team"].environments;
+  } else if (userPermissions === "contributor") {
+    environments = permissions.teams["epo-team"].environments;
+  }
+
+  environments.forEach((env) => {
+    const option = document.createElement("option");
+    option.value = env;
+    option.textContent = env;
+    select.appendChild(option);
+  });
+
+  envSelector.appendChild(select);
+
+  // Add approval indication
+  const approvalInfo = document.createElement("div");
+  approvalInfo.className = "approval-info";
+  approvalInfo.innerHTML = "&nbsp;";
+
+  select.addEventListener("change", () => {
+    const selectedEnv = select.value;
+    if (
+      userPermissions === "contributor" &&
+      permissions.teams["epo-team"].approval_required &&
+      permissions.teams["epo-team"].approval_required[selectedEnv]
+    ) {
+      approvalInfo.textContent = "* Requires approval from CIE team";
+    } else {
+      approvalInfo.innerHTML = "&nbsp;";
+    }
+  });
+
+  // Trigger initial display
+  const event = new Event("change");
+  select.dispatchEvent(event);
+
+  envSelector.appendChild(approvalInfo);
+}
