@@ -39,7 +39,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2) Azure login with a single JSON creds secret (Client Secret).
+      # 2) Azure Login with a single JSON creds secret (Service Principal + client secret)
       - name: Azure Login
         uses: azure/login@v2
         with:
@@ -50,37 +50,44 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
 
-      # 4) Terraform Init
+      # 4) Debug workspace (optional) — see what folders actually exist
+      - name: List workspace contents
+        run: |
+          echo "Listing $GITHUB_WORKSPACE"
+          ls -R $GITHUB_WORKSPACE
+
+      # 5) Terraform Init
       - name: Terraform Init
         run: |
-          cd $GITHUB_WORKSPACE/modules/service-bus/${{ github.event.inputs.environment }}
+          cd $GITHUB_WORKSPACE/modules/${{ github.event.inputs.environment }}
           terraform init
 
-      # 5) Terraform Validate
+      # 6) Terraform Validate
       - name: Terraform Validate
         run: |
-          cd $GITHUB_WORKSPACE/modules/service-bus/${{ github.event.inputs.environment }}
+          cd $GITHUB_WORKSPACE/modules/${{ github.event.inputs.environment }}
           terraform validate
 
-      # 6) Terraform Apply
+      # 7) Terraform Apply
       - name: Terraform Apply
         run: |
-          cd $GITHUB_WORKSPACE/modules/service-bus/${{ github.event.inputs.environment }}
+          cd $GITHUB_WORKSPACE/modules/${{ github.event.inputs.environment }}
 
-          # Create a tfvars file based on user inputs
-          echo 'resource_name = "${{ github.event.inputs.resourceName }}"' > terraform.tfvars
-          echo 'message_retention = "${{ github.event.inputs.messageRetention }}"' >> terraform.tfvars
-          echo 'max_size_megabytes = "${{ github.event.inputs.maxSizeInMegabytes }}"' >> terraform.tfvars
+          # Optionally create a temporary .tfvars if your environment main.tf expects them:
+          echo "resource_name                 = \"${{ github.event.inputs.resourceName }}\""      >  request.tfvars
+          echo "message_retention             = \"${{ github.event.inputs.messageRetention }}\""  >> request.tfvars
+          echo "max_size_megabytes            = \"${{ github.event.inputs.maxSizeInMegabytes }}\"" >> request.tfvars
 
           if [ "${{ github.event.inputs.requiresDuplicateDetection }}" == "true" ]; then
-            echo 'requires_duplicate_detection = true' >> terraform.tfvars
+            echo "requires_duplicate_detection  = true" >> request.tfvars
           else
-            echo 'requires_duplicate_detection = false' >> terraform.tfvars
+            echo "requires_duplicate_detection  = false" >> request.tfvars
           fi
 
-          terraform apply -auto-approve
+          # Now apply, passing the .tfvars if needed
+          terraform apply -auto-approve -var-file=request.tfvars
 
-      # 7) Completion Notification
+      # 8) Completion Notification
       - name: Notify completion
         run: |
           echo "✅ Service Bus Topic '${{ github.event.inputs.resourceName }}' provisioned successfully!"
