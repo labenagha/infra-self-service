@@ -20,7 +20,17 @@ app.http('httpTrigger1', {
         }
 
         try {
-            // Get the code from the request body
+            // 1) Quick connectivity test to confirm outbound calls work
+            try {
+                context.log('Testing outbound call to Google...');
+                const googleRes = await fetch('https://www.google.com');
+                context.log('Google response status:', googleRes.status);
+            } catch (err) {
+                context.log.error('Error calling Google:', err);
+                // If this fails, the function can't reach the public internet
+            }
+
+            // 2) Parse request body
             let body;
             try {
                 body = await request.json();
@@ -45,7 +55,7 @@ app.http('httpTrigger1', {
             const code = body.code;
             context.log('Received code, exchanging for token...');
             
-            // Make request to GitHub to exchange code for token
+            // 3) Exchange code with GitHub
             const response = await fetch('https://github.com/login/oauth/access_token', {
                 method: 'POST',
                 headers: {
@@ -84,7 +94,7 @@ app.http('httpTrigger1', {
                 };
             }
             
-            // Return the token to the client
+            // 4) Return the token to the client
             const responseBody = JSON.stringify({
                 access_token: data.access_token,
                 token_type: data.token_type
@@ -99,7 +109,6 @@ app.http('httpTrigger1', {
             };
         } catch (error) {
             context.log.error('Error exchanging token:', error);
-            
             return {
                 status: 500,
                 headers,
