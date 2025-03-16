@@ -5,7 +5,7 @@ const clientId = 'Iv23liYjrKuCgJRPT42k';
 // The callback URL should match exactly what you configured in GitHub
 const redirectUri = 'https://labenagha.github.io/infra-self-service/auth/github/callback';
 // URL to your Azure Function - replace with your actual deployed function URL
-const tokenExchangeUrl = 'https://exchange-token.azurewebsites.net/api/httpTrigger1?';
+const tokenExchangeUrl = 'https://exchange-token.azurewebsites.net/api/httpTrigger1';
 
 // Check for existing token in session storage
 let token = sessionStorage.getItem('github_token');

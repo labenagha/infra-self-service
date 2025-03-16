@@ -9,7 +9,7 @@ app.http('httpTrigger1', {
         // Enable CORS
         const headers = {
             "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Origin": "https://labenagha.github.io",
             "Access-Control-Allow-Methods": "POST, OPTIONS",
             "Access-Control-Allow-Headers": "Content-Type"
         };
@@ -32,6 +32,7 @@ app.http('httpTrigger1', {
             }
 
             const code = body.code;
+            context.log('Received code from client, exchanging for token...');
             
             // Make request to GitHub to exchange code for token
             const response = await fetch('https://github.com/login/oauth/access_token', {
@@ -48,6 +49,16 @@ app.http('httpTrigger1', {
             });
 
             const data = await response.json();
+            context.log('Token exchange response received from GitHub');
+            
+            if (data.error) {
+                context.log.error('GitHub error:', data.error);
+                return {
+                    status: 400,
+                    headers,
+                    body: { error: data.error_description || data.error }
+                };
+            }
             
             // Return the token to the client
             return {
@@ -64,7 +75,7 @@ app.http('httpTrigger1', {
             return {
                 status: 500,
                 headers,
-                body: { error: "Failed to exchange token" }
+                body: { error: "Failed to exchange token: " + error.message }
             };
         }
     }
