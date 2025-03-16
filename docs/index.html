@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Infrastructure Self-Service Portal - Login</title>
+    <title> Tandem Diabetes Infrastructure Self-Service Portal - Login</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
     <style>
       :root {
@@ -235,20 +235,36 @@
         }
       }
     </style>
+    <script>
+      (function () {
+        if (
+          window.location.search.includes("code=") &&
+          !window.location.pathname.includes("/auth/github/callback")
+        ) {
+          const urlParams = new URLSearchParams(window.location.search);
+          const code = urlParams.get("code");
+
+          if (code) {
+            sessionStorage.setItem("github_auth_code", code);
+            console.log("OAuth code detected, processing login...");
+          }
+        }
+      })();
+    </script>
   </head>
   <body>
     <!-- Header -->
     <header class="header">
       <div class="header-container">
-        <img src="/docs/assets/tandem-diabetes-logo.png" alt="Tandem Diabetes Care Logo" class="logo" />
-        <h1 class="header-title">Tandem Internal Tools</h1>
+        <img src="/infra-self-service/docs/assets/tandem-diabetes-logo.png" alt="Tandem Diabetes Care Logo" class="logo" />
+        <!-- <h1 class="header-title">Tandem Internal Tools</h1> -->
       </div>
     </header>
     
     <!-- Main content -->
     <main class="main-container">
       <div class="branding-container">
-        <img src="/docs/assets/tandem-diabetes-logo.png" alt="Tandem Diabetes Care Logo" class="branding-logo" />
+        <img src="/infra-self-service/docs/assets/tandem-diabetes-logo.png" alt="Tandem Diabetes Care Logo" class="branding-logo" />
         <h1 class="portal-title">Infrastructure Self-Service Portal</h1>
         <p class="tagline">Streamlined infrastructure management for Tandem Diabetes Care</p>
       </div>
@@ -284,7 +300,7 @@
         </div>
         
         <div class="token-input">
-          <input type="text" id="token-input" placeholder="Paste your GitHub Personal Access Token here">
+          <input type="text" id="pat-input" placeholder="Paste your GitHub Personal Access Token here">
           <button class="login-button" id="login-button">Login</button>
         </div>
         
@@ -304,11 +320,13 @@
       </div>
     </footer>
     
+    <script src="/infra-self-service/js/auth.js"></script>
     <script>
+      // Login button event handler
       document.getElementById('login-button').addEventListener('click', function() {
-        const token = document.getElementById('token-input').value;
+        const token = document.getElementById('pat-input').value;
         if (token) {
-          // Store token and redirect
+          // Store token and redirect - using your auth.js file for validation
           sessionStorage.setItem('github_token', token);
           window.location.href = '/infra-self-service/dashboard.html';
         } else {
