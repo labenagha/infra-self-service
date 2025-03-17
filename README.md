@@ -25,100 +25,350 @@ This solution provides a form-based interface for infrastructure requests while 
 
 ### 1. Self-Service Web UI (GitHub Pages)
 
-A static web application hosted on GitHub Pages with a custom domain (e.g., `infra.yourcompany.com`).
+A static web application hosted on GitHub Pages that provides a user-friendly interface for infrastructure requests. The UI dynamically renders forms based on resource type and user permissions.
+
+Key files:
+- `docs/index.html`: Main entry point for the web application
+- `docs/js/auth.js`: Handles GitHub OAuth authentication flow and user permissions
+- `docs/js/api.js`: Manages communication with GitHub API and form submissions
+- `docs/js/service-bus-form.js` & `docs/js/storage-account-form.js`: Generate dynamic forms based on resource schemas
+
+Example of dynamic form generation:
+```javascript
+// Simplified form generation logic
+function loadResourceForm(resourceType, permissions) {
+    // Fetch resource schema
+    fetch(`config/resource-templates/${resourceType.toLowerCase()}/schema.json`)
+        .then(response => response.json())
+        .then(schema => {
+            // Create form fields based on schema
+            Object.entries(schema.properties).forEach(([fieldName, fieldConfig]) => {
+                // Create appropriate form field based on type
+                const input = createFormField(fieldName, fieldConfig);
+                
+                // Apply user permission limitations if necessary
+                applyPermissionLimitations(input, fieldName, resourceType, permissions);
+                
+                // Add field to form
+                formContainer.appendChild(input);
+            });
+        });
+}
 
 ### 2. Authentication & Authorization
 
-Uses GitHub OAuth to authenticate users and determine their permissions based on team membership.
+Uses GitHub OAuth to authenticate users and determine their permissions based on team membership. A serverless Azure Function handles the token exchange process securely.
 
-### 3. Request Processing
+Key files:
+- `exchange-token/index.js`: Core Azure Function implementation
+- `src/functions/httpTrigger1.js`: HTTP trigger function that handles CORS and OAuth code exchange
+- `docs/config/permissions.yml`: Defines team-based access permissions and resource limitations
 
-GitHub Actions workflow that validates requests, transforms them into infrastructure code, and executes your existing workflows.
-
-### 4. Permission Model
-
-Fine-grained control based on GitHub team membership, with specific roles for CIE and DEV teams.
-
-## Implementation Details
-
-### GitHub Repository Structure
-
+Example of the OAuth token exchange:
+```javascript
+// Azure Function to exchange OAuth code for token
+app.http('httpTrigger1', {
+    methods: ['POST', 'OPTIONS'],
+    authLevel: 'anonymous',
+    handler: async (request, context) => {
+        // Handle CORS preflight
+        if (request.method === "OPTIONS") {
+            return { status: 200, headers: corsHeaders };
+        }
+        
+        try {
+            // Get code from request
+            const body = await request.json();
+            const code = body.code;
+            
+            // Exchange with GitHub
+            const response = await fetch('https://github.com/login/oauth/access_token', {
+                method: 'POST',
+                headers: { 'Accept': 'application/json' },
+                body: JSON.stringify({
+                    client_id: process.env.GITHUB_CLIENT_ID,
+                    client_secret: process.env.GITHUB_CLIENT_SECRET,
+                    code: code
+                })
+            });
+            
+            // Return token to client
+            const data = await response.json();
+            return {
+                status: 200,
+                body: JSON.stringify({
+                    access_token: data.access_token,
+                    token_type: data.token_type
+                })
+            };
+        } catch (error) {
+            context.log.error('Error:', error);
+            return { status: 500, body: JSON.stringify({ error: error.message }) };
+        }
+    }
+});
 ```
-/
-infra-self-service/
-|-- .github/
-|   `-- workflows/
-|       |-- infrastructure-request.yml
-|       |-- permission-validation.yml
-|       `-- your-existing-workflows.yml
-|-- CNAME
-|-- config/
-|   |-- environments.yml
-|   |-- permissions.yml
-|   `-- resource-templates/
-|       `-- service-bus/
-|           `-- schema.json
-|-- docs/
-|   |-- css/
-|   |   `-- styles.css
-|   |-- index.html
-|   `-- js/
-|       |-- api.js
-|       |-- auth.js
-|       `-- forms.js
-|-- scripts/
-|   `-- generate-service-bus.sh
-`-- infrastructure-self-service.md
-```
 
-### Permission Configuration
-
+Example of permission configuration:
 ```yaml
-# permissions.yml
+# Simplified permissions.yml
 teams:
-  CIE-Team:
+  cie-team:
     role: admin
-    environments: 
-      - dev
-      - test
-      - prod
-    resources:
-      - ServiceBusTopic
-      - SqlDatabase
-      - AppService
-      - StorageAccount
-      - KeyVault
+    environments: [dev, test]
+    resources: [ServiceBusTopic, StorageAccount]
     approval_required: false
     
-  DEV-Team:
+  epo-team:
     role: contributor
-    environments:
-      - dev
-      - test
-    resources:
-      - ServiceBusTopic
-      - AppService
+    environments: [dev, test]
+    resources: [ServiceBusTopic]
     approval_required:
-      dev: false
-      test: true
-      prod: true
+      dev: true
+      test: false
     limitations:
       ServiceBusTopic:
         maxSizeInMegabytes: 1024
-      AppService:
-        skuTier: ["Basic", "Standard"]
+```
+
+### 3. Request Processing
+
+Converts user form input into standardized infrastructure request files, creates pull requests, and manages the approval workflow based on user permissions.
+
+Key files:
+- `docs/js/servicebus-api.js` & `docs/js/storage-account-api.js`: Resource-specific API handlers for transforming form data into infrastructure code
+- `docs/config/resource-templates/*/schema.json`: JSON schemas that define the structure and validation rules for each resource type
+
+Example of schema definition for a Service Bus Topic:
+```json
+{
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "title": "Topic Name",
+      "description": "Name of the Service Bus Topic"
+    },
+    "messageRetention": {
+      "type": "number",
+      "title": "Message Retention (Days)",
+      "default": 7,
+      "minimum": 1,
+      "maximum": 14
+    },
+    "maxSizeInMegabytes": {
+      "type": "number",
+      "title": "Maximum Size (MB)",
+      "default": 1024,
+      "enum": [1024, 2048, 3072, 4096, 5120]
+    },
+    "requiresDuplicateDetection": {
+      "type": "boolean",
+      "title": "Enable Duplicate Detection",
+      "default": false
+    }
+  },
+  "required": ["name"]
+}
+```
+
+Example of creating a GitHub Pull Request from form data:
+```javascript
+async function submitResourceRequest(formData, resourceType) {
+    // Create request data from form
+    const requestData = {
+        kind: resourceType,
+        metadata: {
+            name: formData.get('name'),
+            environment: formData.get('environment'),
+            requestedBy: username
+        },
+        spec: {
+            // Add all form fields to spec
+            messageRetention: formData.get('messageRetention'),
+            maxSizeInMegabytes: formData.get('maxSizeInMegabytes'),
+            requiresDuplicateDetection: formData.get('requiresDuplicateDetection')
+        }
+    };
+    
+    // Create branch, file, and pull request in GitHub
+    const branchName = `request/${resourceType.toLowerCase()}-${Date.now()}`;
+    await createBranch(branchName);
+    await createFile(`requests/${resourceType.toLowerCase()}/${formData.get('name')}.yml`, requestData, branchName);
+    const pr = await createPullRequest(branchName, `Request: ${resourceType} - ${formData.get('name')}`);
+    
+    return pr;
+}
+```
+
+### 4. Infrastructure Provisioning
+
+Terraform modules for creating and managing the requested infrastructure resources in a standardized way.
+
+Key files:
+- `modules/service-bus/`: Terraform module for Service Bus provisioning
+- `modules/storage-account/`: Terraform module for Storage Account provisioning
+- `modules/dev/` & `modules/test/`: Environment-specific Terraform configurations
+
+Example of Service Bus Terraform module:
+```terraform
+// Simplified Service Bus Terraform module
+resource "azurerm_servicebus_namespace" "this" {
+  name                = "${var.resource_name}-namespace"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  sku                 = "Standard"
+  tags                = var.tags
+}
+
+resource "azurerm_servicebus_topic" "this" {
+  name                         = var.resource_name
+  namespace_id                 = azurerm_servicebus_namespace.this.id
+  default_message_ttl          = "P${var.message_retention}D"
+  max_size_in_megabytes        = var.max_size_mb
+  requires_duplicate_detection = var.requires_duplicate_detection
+}
+```
+
+Example of environment-specific configuration:
+```terraform
+// Simplified environment configuration
+locals {
+  environment = "dev"
+  location    = "eastus"
+  common_tags = {
+    Environment = local.environment
+    ManagedBy   = "terraform"
+  }
+}
+
+resource "azurerm_resource_group" "servicebus" {
+  name     = "servicebus-${local.environment}"
+  location = local.location
+  tags     = local.common_tags
+}
+
+module "service_bus" {
+  source = "../service-bus"
+
+  resource_name                = var.resource_name
+  message_retention            = var.message_retention
+  max_size_mb                  = var.max_size_mb
+  requires_duplicate_detection = var.requires_duplicate_detection
+
+  resource_group_name = azurerm_resource_group.servicebus.name
+  location            = local.location
+  tags                = local.common_tags
+}
+```
+
+### 5. Permission Model
+
+Fine-grained control based on GitHub team membership with specific roles, environment access, and resource limitations.
+
+Permission system features:
+- Role-based access (admin for CIE team, contributor for DEV team)
+- Environment-specific permissions (dev, test, prod)
+- Resource type restrictions based on team membership
+- Approval requirements that vary by environment
+- Resource-specific limitations (e.g., max sizes, allowed SKUs)
+
+Example of permission validation in the UI:
+```javascript
+function initializeApp() {
+    // Fetch user info and teams from GitHub
+    Promise.all([
+        fetch('https://api.github.com/user', { headers: { Authorization: `token ${token}` } }),
+        fetch('https://api.github.com/user/teams', { headers: { Authorization: `token ${token}` } })
+    ])
+    .then(([userResponse, teamsResponse]) => Promise.all([userResponse.json(), teamsResponse.json()]))
+    .then(([user, teams]) => {
+        // Determine user's permission level
+        const teamNames = teams.map(team => team.name.toLowerCase());
+        
+        if (teamNames.includes('cie-team')) {
+            userPermissions = 'admin';
+        } else if (teamNames.includes('epo-team')) {
+            userPermissions = 'contributor';
+        } else {
+            userPermissions = 'viewer';
+        }
+        
+        // Load available resources based on permissions
+        return fetch('config/permissions.yml');
+    })
+    .then(response => response.text())
+    .then(yamlText => {
+        const permissions = parseYaml(yamlText);
+        
+        // Filter resources based on user permissions
+        const availableResources = 
+            userPermissions === 'admin' 
+                ? permissions.teams['cie-team'].resources
+                : permissions.teams['epo-team'].resources;
+                
+        // Show only allowed resources in the UI
+        displayResourceOptions(availableResources);
+    });
+}
+```
+
+Example of GitHub Action for validation and approval:
+```yaml
+# Simplified infrastructure-request.yml
+name: Process Infrastructure Request
+
+on:
+  pull_request:
+    paths: ['requests/**/*.yml']
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Validate request permissions
+        run: |
+          # Get requester's team membership
+          TEAMS=$(gh api user/teams | jq -r '.[].name')
+          
+          # Check if user is in admin team (auto-approve)
+          if echo "$TEAMS" | grep -q "cie-team"; then
+            echo "User is admin, approving request"
+            echo "IS_ADMIN=true" >> $GITHUB_ENV
+            exit 0
+          fi
+          
+          # For contributor, check if approval required for environment
+          ENVIRONMENT=$(yq -r '.metadata.environment' $REQUEST_FILE)
+          APPROVAL_REQUIRED=$(yq -r '.teams.epo-team.approval_required.'$ENVIRONMENT ./config/permissions.yml)
+          
+          if [ "$APPROVAL_REQUIRED" = "true" ]; then
+            echo "REQUIRES_APPROVAL=true" >> $GITHUB_ENV
+          else
+            echo "REQUIRES_APPROVAL=false" >> $GITHUB_ENV
+          fi
+          
+      - name: Auto-approve if allowed
+        if: env.IS_ADMIN == 'true' || env.REQUIRES_APPROVAL == 'false'
+        uses: hmarr/auto-approve-action@v3
+          
+      - name: Request review if needed
+        if: env.REQUIRES_APPROVAL == 'true'
+        run: gh pr edit "${{ github.event.pull_request.number }}" --add-reviewer "cie-team"
 ```
 
 ## User Journeys
 
 ### DEV Team Member Request Flow
 
-1. Developer navigates to `infra.yourcompany.com`
+1. Developer navigates to the self-service portal
 2. Authenticates with GitHub credentials
 3. UI shows only the resource types they can create (ServiceBusTopic, AppService)
-4. They select "ServiceBusTopic" and fill out a form
+4. They select a resource type and fill out a form with appropriate validation
 5. System validates input against their permission limits
-6. Form submission creates a PR with appropriate YAML template
+6. Form submission creates a PR with appropriate infrastructure code
 7. For dev environment: auto-approved and processed
 8. For test environment: requires CIE team approval
 
@@ -130,639 +380,12 @@ teams:
 4. Requests are automatically approved
 5. They can also review and approve DEV team requests
 
-## Technical Implementation
+## Project Structure
 
-### 1. GitHub Pages UI Implementation
+This repository is organized into several key directories:
+- `/docs`: Contains the static web UI hosted on GitHub Pages
+- `/modules`: Terraform modules for infrastructure provisioning
+- `/exchange-token` & `/src`: Azure Function for OAuth token exchange
+- Configuration files for permissions, environments, and resource templates
 
-```html
-<!-- index.html (simplified version) -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Infrastructure Self-Service Portal</title>
-    <link rel="stylesheet" href="css/styles.css">
-</head>
-<body>
-    <header>
-        <h1>Infrastructure Self-Service Portal</h1>
-        <div id="user-info">
-            <span id="username">Not logged in</span>
-            <button id="login-button">Login with GitHub</button>
-            <button id="logout-button" style="display:none">Logout</button>
-        </div>
-    </header>
-    
-    <main>
-        <div id="loading" style="display:none">Loading...</div>
-        
-        <div id="resource-selector" style="display:none">
-            <h2>Select Resource Type</h2>
-            <div id="resource-buttons"></div>
-        </div>
-        
-        <div id="resource-form-container" style="display:none">
-            <h2 id="form-title">Create Resource</h2>
-            <form id="resource-form">
-                <div id="form-fields"></div>
-                <div id="environment-selector"></div>
-                <button type="submit">Submit Request</button>
-            </form>
-        </div>
-        
-        <div id="result-message"></div>
-    </main>
-    
-    <script src="js/auth.js"></script>
-    <script src="js/forms.js"></script>
-    <script src="js/api.js"></script>
-</body>
-</html>
-```
-
-### 2. Authentication Implementation
-
-```javascript
-// auth.js
-const clientId = 'your-github-oauth-app-id';
-const redirectUri = 'https://infra.yourcompany.com/callback';
-let token = sessionStorage.getItem('github_token');
-let userPermissions = null;
-
-// Check if we're returning from auth
-const code = new URLSearchParams(window.location.search).get('code');
-if (code) {
-    // Exchange code for token via serverless function
-    // (GitHub OAuth requires a server component for the token exchange)
-    fetch('https://your-exchange-function.azurewebsites.net/api/exchange-token', {
-        method: 'POST',
-        body: JSON.stringify({ code })
-    })
-    .then(response => response.json())
-    .then(data => {
-        token = data.access_token;
-        sessionStorage.setItem('github_token', token);
-        window.history.replaceState({}, document.title, '/');
-        initializeApp();
-    });
-} else if (token) {
-    initializeApp();
-} else {
-    document.getElementById('login-button').addEventListener('click', () => {
-        window.location.href = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=repo,read:org`;
-    });
-}
-
-function initializeApp() {
-    document.getElementById('login-button').style.display = 'none';
-    document.getElementById('logout-button').style.display = 'block';
-    document.getElementById('loading').style.display = 'block';
-    
-    // Fetch user info and teams
-    Promise.all([
-        fetch('https://api.github.com/user', { headers: { Authorization: `token ${token}` } }).then(r => r.json()),
-        fetch('https://api.github.com/user/teams', { headers: { Authorization: `token ${token}` } }).then(r => r.json())
-    ])
-    .then(([user, teams]) => {
-        document.getElementById('username').textContent = user.login;
-        
-        // Check if user is in CIE or DEV team
-        const teamNames = teams.map(team => team.name);
-        if (teamNames.includes('CIE-Team')) {
-            userPermissions = 'admin';
-        } else if (teamNames.includes('DEV-Team')) {
-            userPermissions = 'contributor';
-        } else {
-            userPermissions = 'viewer';
-        }
-        
-        // Fetch permission configuration
-        return fetch('https://raw.githubusercontent.com/your-org/your-repo/main/config/permissions.yml');
-    })
-    .then(response => response.text())
-    .then(yamlText => {
-        // In production, use proper YAML parser
-        // This is simplified for example
-        const permissions = parseYaml(yamlText);
-        loadResourceOptions(permissions);
-    })
-    .catch(error => {
-        console.error('Error initializing app:', error);
-        document.getElementById('result-message').textContent = 'Error initializing application. Please try again.';
-    })
-    .finally(() => {
-        document.getElementById('loading').style.display = 'none';
-    });
-}
-
-document.getElementById('logout-button').addEventListener('click', () => {
-    sessionStorage.removeItem('github_token');
-    window.location.reload();
-});
-
-// Helper function to parse YAML (simplified for example)
-function parseYaml(yaml) {
-    // In production, use js-yaml or another proper parser
-    // This is just for illustration
-    return {
-        teams: {
-            'CIE-Team': {
-                role: 'admin',
-                environments: ['dev', 'test', 'prod'],
-                resources: ['ServiceBusTopic', 'SqlDatabase', 'AppService', 'StorageAccount', 'KeyVault'],
-                approval_required: false
-            },
-            'DEV-Team': {
-                role: 'contributor',
-                environments: ['dev', 'test'],
-                resources: ['ServiceBusTopic', 'AppService'],
-                approval_required: {
-                    dev: false,
-                    test: true,
-                    prod: true
-                },
-                limitations: {
-                    ServiceBusTopic: {
-                        maxSizeInMegabytes: 1024
-                    },
-                    AppService: {
-                        skuTier: ['Basic', 'Standard']
-                    }
-                }
-            }
-        }
-    };
-}
-```
-
-### 3. GitHub Action for Processing Requests
-
-```yaml
-# .github/workflows/infrastructure-request.yml
-name: Process Infrastructure Request
-
-on:
-  pull_request:
-    paths:
-      - 'requests/**/*.yml'
-
-jobs:
-  validate:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Get changed files
-        id: changed-files
-        uses: tj-actions/changed-files@v35
-        with:
-          files: requests/**/*.yml
-          
-      - name: Validate request permissions
-        id: validate
-        run: |
-          REQUEST_FILE="${{ steps.changed-files.outputs.all_changed_files }}"
-          REQUESTER="${{ github.event.pull_request.user.login }}"
-          
-          # Get team membership
-          TEAMS=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/users/$REQUESTER/teams" | jq -r '.[].name')
-          
-          # Check if user is in admin team
-          if echo "$TEAMS" | grep -q "CIE-Team"; then
-            echo "User is admin, approving request"
-            echo "IS_ADMIN=true" >> $GITHUB_ENV
-            exit 0
-          fi
-          
-          # Parse request YAML
-          RESOURCE_TYPE=$(yq -r '.kind' $REQUEST_FILE)
-          ENVIRONMENT=$(yq -r '.metadata.environment' $REQUEST_FILE)
-          
-          # Check if DEV team can access this resource and environment
-          if echo "$TEAMS" | grep -q "DEV-Team"; then
-            # Check resource type permission
-            ALLOWED_RESOURCES=$(yq -r '.teams."DEV-Team".resources[]' ./config/permissions.yml)
-            if ! echo "$ALLOWED_RESOURCES" | grep -q "$RESOURCE_TYPE"; then
-              echo "::error::User not allowed to create $RESOURCE_TYPE resources"
-              exit 1
-            fi
-            
-            # Check environment permission
-            ALLOWED_ENVS=$(yq -r '.teams."DEV-Team".environments[]' ./config/permissions.yml)
-            if ! echo "$ALLOWED_ENVS" | grep -q "$ENVIRONMENT"; then
-              echo "::error::User not allowed to deploy to $ENVIRONMENT"
-              exit 1
-            fi
-            
-            # Check if approval required
-            APPROVAL_REQUIRED=$(yq -r '.teams."DEV-Team".approval_required.'$ENVIRONMENT ./config/permissions.yml)
-            if [ "$APPROVAL_REQUIRED" = "true" ]; then
-              echo "REQUIRES_APPROVAL=true" >> $GITHUB_ENV
-            else
-              echo "REQUIRES_APPROVAL=false" >> $GITHUB_ENV
-            fi
-            
-            echo "IS_ADMIN=false" >> $GITHUB_ENV
-            exit 0
-          fi
-          
-          echo "::error::User not in any authorized team"
-          exit 1
-          
-      - name: Auto-approve if allowed
-        if: env.IS_ADMIN == 'true' || env.REQUIRES_APPROVAL == 'false'
-        uses: hmarr/auto-approve-action@v3
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          
-      - name: Request review if needed
-        if: env.REQUIRES_APPROVAL == 'true'
-        run: |
-          gh pr edit "${{ github.event.pull_request.number }}" --add-reviewer "CIE-Team"
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  deploy:
-    needs: validate
-    if: github.event.pull_request.merged == true
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Get changed files
-        id: changed-files
-        uses: tj-actions/changed-files@v35
-        with:
-          files: requests/**/*.yml
-          
-      - name: Generate infrastructure code
-        run: |
-          REQUEST_FILE="${{ steps.changed-files.outputs.all_changed_files }}"
-          RESOURCE_TYPE=$(yq -r '.kind' $REQUEST_FILE)
-          
-          # Use resource type to select template
-          case "$RESOURCE_TYPE" in
-            "ServiceBusTopic")
-              # Generate ARM/Terraform/etc. from request YAML
-              ./scripts/generate-service-bus.sh "$REQUEST_FILE"
-              ;;
-            "AppService")
-              ./scripts/generate-app-service.sh "$REQUEST_FILE"
-              ;;
-            *)
-              echo "Unknown resource type: $RESOURCE_TYPE"
-              exit 1
-              ;;
-          esac
-      
-      - name: Call your existing deployment workflow
-        uses: benc-uk/workflow-dispatch@v1
-        with:
-          workflow: your-existing-workflow.yml
-          inputs: '{"resourceType": "${{ env.RESOURCE_TYPE }}", "configPath": "${{ env.CONFIG_PATH }}"}'
-```
-
-### 4. Dynamic Form Generator
-
-```javascript
-// forms.js
-function loadResourceOptions(permissions) {
-    const resourceContainer = document.getElementById('resource-buttons');
-    resourceContainer.innerHTML = '';
-    
-    // Determine available resources based on user permission
-    let availableResources = [];
-    if (userPermissions === 'admin') {
-        availableResources = permissions.teams['CIE-Team'].resources;
-    } else if (userPermissions === 'contributor') {
-        availableResources = permissions.teams['DEV-Team'].resources;
-    }
-    
-    // Create buttons for each resource type
-    availableResources.forEach(resource => {
-        const button = document.createElement('button');
-        button.textContent = formatResourceName(resource);
-        button.className = 'resource-button';
-        button.addEventListener('click', () => loadResourceForm(resource, permissions));
-        resourceContainer.appendChild(button);
-    });
-    
-    document.getElementById('resource-selector').style.display = 'block';
-}
-
-function formatResourceName(camelCase) {
-    return camelCase.replace(/([A-Z])/g, ' $1').trim();
-}
-
-function loadResourceForm(resourceType, permissions) {
-    const formContainer = document.getElementById('form-fields');
-    formContainer.innerHTML = '';
-    
-    document.getElementById('form-title').textContent = `Create ${formatResourceName(resourceType)}`;
-    
-    // Load resource-specific form fields
-    fetch(`https://raw.githubusercontent.com/your-org/your-repo/main/config/resource-templates/${resourceType.toLowerCase()}/schema.json`)
-        .then(response => response.json())
-        .then(schema => {
-            // Create form fields based on schema
-            Object.entries(schema.properties).forEach(([fieldName, fieldConfig]) => {
-                const fieldContainer = document.createElement('div');
-                fieldContainer.className = 'form-field';
-                
-                const label = document.createElement('label');
-                label.textContent = fieldConfig.title || formatResourceName(fieldName);
-                label.setAttribute('for', fieldName);
-                
-                let input;
-                if (fieldConfig.enum) {
-                    input = document.createElement('select');
-                    fieldConfig.enum.forEach(option => {
-                        const optionElement = document.createElement('option');
-                        optionElement.value = option;
-                        optionElement.textContent = option;
-                        input.appendChild(optionElement);
-                    });
-                } else if (fieldConfig.type === 'boolean') {
-                    input = document.createElement('input');
-                    input.type = 'checkbox';
-                } else {
-                    input = document.createElement('input');
-                    input.type = fieldConfig.type === 'number' ? 'number' : 'text';
-                    if (fieldConfig.default) {
-                        input.value = fieldConfig.default;
-                    }
-                }
-                
-                input.id = fieldName;
-                input.name = fieldName;
-                
-                // Apply limitations for contributor users
-                if (userPermissions === 'contributor' && 
-                    permissions.teams['DEV-Team'].limitations &&
-                    permissions.teams['DEV-Team'].limitations[resourceType] &&
-                    permissions.teams['DEV-Team'].limitations[resourceType][fieldName]) {
-                    
-                    const limitation = permissions.teams['DEV-Team'].limitations[resourceType][fieldName];
-                    if (Array.isArray(limitation)) {
-                        // For enum types, filter options
-                        if (input.tagName === 'SELECT') {
-                            Array.from(input.options).forEach(option => {
-                                if (!limitation.includes(option.value)) {
-                                    option.remove();
-                                }
-                            });
-                        }
-                    } else {
-                        // For numeric limitations
-                        input.max = limitation;
-                    }
-                }
-                
-                fieldContainer.appendChild(label);
-                fieldContainer.appendChild(input);
-                formContainer.appendChild(fieldContainer);
-            });
-            
-            // Load environment selector
-            loadEnvironmentSelector(resourceType, permissions);
-            
-            document.getElementById('resource-selector').style.display = 'none';
-            document.getElementById('resource-form-container').style.display = 'block';
-        })
-        .catch(error => {
-            console.error('Error loading form:', error);
-            document.getElementById('result-message').textContent = `Error loading form for ${resourceType}`;
-        });
-}
-
-function loadEnvironmentSelector(resourceType, permissions) {
-    const envSelector = document.getElementById('environment-selector');
-    envSelector.innerHTML = '<label>Target Environment:</label>';
-    
-    const select = document.createElement('select');
-    select.id = 'environment';
-    select.name = 'environment';
-    
-    // Get available environments based on permissions
-    let environments = [];
-    if (userPermissions === 'admin') {
-        environments = permissions.teams['CIE-Team'].environments;
-    } else if (userPermissions === 'contributor') {
-        environments = permissions.teams['DEV-Team'].environments;
-    }
-    
-    environments.forEach(env => {
-        const option = document.createElement('option');
-        option.value = env;
-        option.textContent = env;
-        select.appendChild(option);
-    });
-    
-    envSelector.appendChild(select);
-    
-    // Add approval indication
-    const approvalInfo = document.createElement('div');
-    approvalInfo.className = 'approval-info';
-    approvalInfo.innerHTML = '&nbsp;';
-    
-    select.addEventListener('change', () => {
-        const selectedEnv = select.value;
-        if (userPermissions === 'contributor' && 
-            permissions.teams['DEV-Team'].approval_required &&
-            permissions.teams['DEV-Team'].approval_required[selectedEnv]) {
-            approvalInfo.textContent = '* Requires approval from CIE team';
-        } else {
-            approvalInfo.innerHTML = '&nbsp;';
-        }
-    });
-    
-    // Trigger initial display
-    const event = new Event('change');
-    select.dispatchEvent(event);
-    
-    envSelector.appendChild(approvalInfo);
-}
-
-// Set up form submission
-document.getElementById('resource-form').addEventListener('submit', function(event) {
-    event.preventDefault();
-    submitResourceRequest();
-});
-```
-
-### 5. GitHub API Integration
-
-```javascript
-// api.js
-async function submitResourceRequest() {
-    const form = document.getElementById('resource-form');
-    const formData = new FormData(form);
-    const resourceType = document.getElementById('form-title').textContent.replace('Create ', '').trim().replace(/\s+/g, '');
-    
-    // Show loading state
-    document.getElementById('result-message').textContent = 'Submitting request...';
-    document.getElementById('resource-form-container').style.display = 'none';
-    document.getElementById('loading').style.display = 'block';
-    
-    try {
-        // Convert form data to YAML
-        const requestData = {
-            kind: resourceType,
-            metadata: {
-                name: formData.get('name'),
-                environment: formData.get('environment'),
-                requestedBy: document.getElementById('username').textContent
-            },
-            spec: {}
-        };
-        
-        // Add all other form fields to spec
-        for (const [key, value] of formData.entries()) {
-            if (key !== 'name' && key !== 'environment') {
-                requestData.spec[key] = value;
-            }
-        }
-        
-        // Generate YAML (in production use proper YAML library)
-        const yaml = convertToYaml(requestData);
-        
-        // Create a new branch
-        const timestamp = new Date().getTime();
-        const branchName = `request/${resourceType.toLowerCase()}-${timestamp}`;
-        const mainRef = await getMainRef();
-        
-        await createBranch(branchName, mainRef);
-        
-        // Create file in the new branch
-        const filePath = `requests/${resourceType.toLowerCase()}/${formData.get('name')}-${formData.get('environment')}.yml`;
-        await createFile(filePath, yaml, branchName);
-        
-        // Create pull request
-        const prTitle = `Request: ${resourceType} - ${formData.get('name')} (${formData.get('environment')})`;
-        const prBody = `Infrastructure request by ${document.getElementById('username').textContent}\n\n` +
-                      `Resource: ${resourceType}\n` +
-                      `Name: ${formData.get('name')}\n` +
-                      `Environment: ${formData.get('environment')}`;
-        
-        const prResponse = await createPullRequest(branchName, prTitle, prBody);
-        
-        // Show success message with PR link
-        document.getElementById('result-message').innerHTML = `
-            <div class="success-message">
-                <h3>Request Submitted Successfully!</h3>
-                <p>Your infrastructure request has been submitted as a pull request.</p>
-                <p><a href="${prResponse.html_url}" target="_blank">View Pull Request #${prResponse.number}</a></p>
-                <button id="new-request-button">Create Another Request</button>
-            </div>
-        `;
-        
-        document.getElementById('new-request-button').addEventListener('click', () => {
-            document.getElementById('result-message').textContent = '';
-            document.getElementById('resource-selector').style.display = 'block';
-        });
-        
-    } catch (error) {
-        console.error('Error submitting request:', error);
-        document.getElementById('result-message').innerHTML = `
-            <div class="error-message">
-                <h3>Error Submitting Request</h3>
-                <p>${error.message}</p>
-                <button id="try-again-button">Try Again</button>
-            </div>
-        `;
-        
-        document.getElementById('try-again-button').addEventListener('click', () => {
-            document.getElementById('result-message').textContent = '';
-            document.getElementById('resource-form-container').style.display = 'block';
-        });
-    } finally {
-        document.getElementById('loading').style.display = 'none';
-    }
-}
-
-// GitHub API helper functions
-async function getMainRef() {
-    const response = await fetch('https://api.github.com/repos/your-org/your-repo/git/ref/heads/main', {
-        headers: { Authorization: `token ${token}` }
-    });
-    const data = await response.json();
-    return data.object.sha;
-}
-
-async function createBranch(branchName, sha) {
-    const response = await fetch('https://api.github.com/repos/your-org/your-repo/git/refs', {
-        method: 'POST',
-        headers: { 
-            Authorization: `token ${token}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            ref: `refs/heads/${branchName}`,
-            sha: sha
-        })
-    });
-    
-    return await response.json();
-}
-
-async function createFile(path, content, branch) {
-    const response = await fetch(`https://api.github.com/repos/your-org/your-repo/contents/${path}`, {
-        method: 'PUT',
-        headers: { 
-            Authorization: `token ${token}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            message: `Add infrastructure request for ${path}`,
-            content: btoa(content),
-            branch: branch
-        })
-    });
-    
-    return await response.json();
-}
-
-async function createPullRequest(branch, title, body) {
-    const response = await fetch('https://api.github.com/repos/your-org/your-repo/pulls', {
-        method: 'POST',
-        headers: { 
-            Authorization: `token ${token}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            title: title,
-            body: body,
-            head: branch,
-            base: 'main'
-        })
-    });
-    
-    return await response.json();
-}
-
-// Helper function to convert object to YAML (simplified)
-function convertToYaml(obj) {
-    // In production, use a proper YAML library
-    let yaml = '';
-    
-    function addLine(key, value, indent = 0) {
-        const indentation = ' '.repeat(indent);
-        if (typeof value === 'object' && value !== null) {
-            yaml += `${indentation}${key}:\n`;
-            for (const [k, v] of Object.entries(value)) {
-                addLine(k, v, indent + 2);
-            }
-        } else {
-            yaml += `${indentation}${key}: ${value}\n`;
-        }
-    }
-    
-    for (const [key, value] of Object.entries(obj)) {
-        addLine(key, value);
-    }
-    
-    return yaml;
-}
-```
+The project leverages GitHub's built-in capabilities for hosting, authentication, and workflow automation to create a complete infrastructure self-service solution without requiring additional tools.
