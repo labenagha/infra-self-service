@@ -101,7 +101,7 @@ jobs:
       - name: Create Terraform Variables File
         run: |
           cd $GITHUB_WORKSPACE/modules/${{ github.event.inputs.environment }}
-          cat > storage-account.auto.tfvars <<EOF
+          cat > storage-account.tfvars <<EOF
             resource_name                      = "${{ github.event.inputs.resourceName }}"
             account_kind                       = "${{ steps.parse-json.outputs.account_kind }}"
             account_tier                       = "${{ steps.parse-json.outputs.account_tier }}"
@@ -121,7 +121,7 @@ jobs:
         id: plan
         run: |
           cd $GITHUB_WORKSPACE/modules/${{ github.event.inputs.environment }}
-          terraform plan -out=tfplan
+          terraform plan -var-file=storage-account.tfvars -out=tfplan
       
       - name: Terraform Apply
         id: apply

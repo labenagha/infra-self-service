@@ -1,4 +1,3 @@
-
 locals {
   environment = "test"
   location    = "eastus"
@@ -17,27 +16,27 @@ resource "azurerm_resource_group" "rg" {
 module "storage_account" {
   source = "../storage-account"
 
-  resource_name                 = "mystorageaccount"
+  resource_name                 = var.resource_name
   resource_group_name           = azurerm_resource_group.rg.name
-  location                      = "eastus"
+  location                      = local.location
   
   # Optional parameters with defaults
-  account_kind                  = "StorageV2"
-  account_tier                  = "Standard"
-  account_replication_type      = "LRS"
-  access_tier                   = "Hot"
-  minimum_tls_version           = "TLS1_2"
-  shared_access_key_enabled     = true
-  https_traffic_only_enabled    = true
-  public_network_access_enabled = false
+  account_kind                  = var.account_kind
+  account_tier                  = var.account_tier
+  account_replication_type      = var.account_replication_type
+  access_tier                   = var.access_tier
+  minimum_tls_version           = var.minimum_tls_version
+  shared_access_key_enabled     = var.shared_access_key_enabled
+  https_traffic_only_enabled    = var.https_traffic_only_enabled
+  public_network_access_enabled = var.public_network_access_enabled
   
   # Network rules configuration
-  default_action                = "Deny"
-  bypass                        = ["AzureServices"]
+  default_action                = var.default_action
+  bypass                        = var.bypass
   
   # Soft delete configuration
-  soft_delete_enabled           = true
-  soft_delete_retention_days    = 7
+  soft_delete_enabled           = var.soft_delete_enabled
+  soft_delete_retention_days    = var.soft_delete_retention_days
   
   # Resource tagging
   tags = {
