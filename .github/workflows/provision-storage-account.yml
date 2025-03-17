@@ -42,11 +42,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: 1.3.0
-      
       - name: Parse Input JSON
         id: parse-json
         run: |
@@ -90,10 +85,14 @@ jobs:
           echo "retention_days=$RETENTION_DAYS" >> $GITHUB_OUTPUT
       
       - name: Azure Login
-        uses: azure/login@v1
+        uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-      
+          enable-AzPSSession: true
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+
       - name: Terraform Init
         run: |
           cd $GITHUB_WORKSPACE/modules/${{ github.event.inputs.environment }}
@@ -103,19 +102,19 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE/modules/${{ github.event.inputs.environment }}
           cat > storage-account.auto.tfvars <<EOF
-          storage_account_name               = "${{ github.event.inputs.resourceName }}"
-          account_kind                       = "${{ steps.parse-json.outputs.account_kind }}"
-          account_tier                       = "${{ steps.parse-json.outputs.account_tier }}"
-          account_replication_type           = "${{ steps.parse-json.outputs.account_replication }}"
-          access_tier                        = "${{ steps.parse-json.outputs.access_tier }}"
-          https_traffic_only_enabled         = ${{ steps.parse-json.outputs.https_only }}
-          minimum_tls_version                = "${{ steps.parse-json.outputs.min_tls }}"
-          public_network_access_enabled      = ${{ steps.parse-json.outputs.public_access }}
-          shared_access_key_enabled          = ${{ steps.parse-json.outputs.shared_keys }}
-          default_action                     = "${{ steps.parse-json.outputs.default_action }}"
-          bypass                             = ["${{ steps.parse-json.outputs.bypass }}"]
-          soft_delete_enabled                = ${{ steps.parse-json.outputs.soft_delete }}
-          soft_delete_retention_days         = ${{ steps.parse-json.outputs.retention_days }}
+            storage_account_name               = "${{ github.event.inputs.resourceName }}"
+            account_kind                       = "${{ steps.parse-json.outputs.account_kind }}"
+            account_tier                       = "${{ steps.parse-json.outputs.account_tier }}"
+            account_replication_type           = "${{ steps.parse-json.outputs.account_replication }}"
+            access_tier                        = "${{ steps.parse-json.outputs.access_tier }}"
+            https_traffic_only_enabled         = ${{ steps.parse-json.outputs.https_only }}
+            minimum_tls_version                = "${{ steps.parse-json.outputs.min_tls }}"
+            public_network_access_enabled      = ${{ steps.parse-json.outputs.public_access }}
+            shared_access_key_enabled          = ${{ steps.parse-json.outputs.shared_keys }}
+            default_action                     = "${{ steps.parse-json.outputs.default_action }}"
+            bypass                             = ["${{ steps.parse-json.outputs.bypass }}"]
+            soft_delete_enabled                = ${{ steps.parse-json.outputs.soft_delete }}
+            soft_delete_retention_days         = ${{ steps.parse-json.outputs.retention_days }}
           EOF
       
       - name: Terraform Plan
@@ -131,24 +130,5 @@ jobs:
           cd $GITHUB_WORKSPACE/modules/${{ github.event.inputs.environment }}
           terraform apply -auto-approve tfplan
       
-      - name: Create PR for State Changes
-        if: success()
-        uses: peter-evans/create-pull-request@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "Add Storage Account ${{ github.event.inputs.resourceName }} to ${{ github.event.inputs.environment }}"
-          title: "Add Storage Account ${{ github.event.inputs.resourceName }} to ${{ github.event.inputs.environment }}"
-          body: |
-            This PR was automatically created by the Infrastructure Self-Service Portal.
-            
-            Storage Account Details:
-            - Name: ${{ github.event.inputs.resourceName }}
-            - Environment: ${{ github.event.inputs.environment }}
-            - Kind: ${{ steps.parse-json.outputs.account_kind }}
-            - Tier: ${{ steps.parse-json.outputs.account_tier }}
-            - Replication: ${{ steps.parse-json.outputs.account_replication }}
-            - Access Tier: ${{ steps.parse-json.outputs.access_tier }}
-            
-            Requested by: ${{ github.actor }}
-          branch: add-storage-account-${{ github.event.inputs.resourceName }}
-          base: main
+      - name: Done
+        run: echo "✅ Storage Account provisioned successfully!"
