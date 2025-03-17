@@ -39,7 +39,8 @@ jobs:
     environment: ${{ github.event.inputs.environment }}
     
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v3
       
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
@@ -95,12 +96,12 @@ jobs:
       
       - name: Terraform Init
         run: |
-          cd terraform/environments/${{ github.event.inputs.environment }}
+          cd $GITHUB_WORKSPACE/modules/${{ github.event.inputs.environment }}
           terraform init
       
       - name: Create Terraform Variables File
         run: |
-          cd terraform/environments/${{ github.event.inputs.environment }}
+          cd $GITHUB_WORKSPACE/modules/${{ github.event.inputs.environment }}
           cat > storage-account.auto.tfvars <<EOF
           storage_account_name               = "${{ github.event.inputs.resourceName }}"
           account_kind                       = "${{ steps.parse-json.outputs.account_kind }}"
@@ -120,14 +121,14 @@ jobs:
       - name: Terraform Plan
         id: plan
         run: |
-          cd terraform/environments/${{ github.event.inputs.environment }}
+          cd $GITHUB_WORKSPACE/modules/${{ github.event.inputs.environment }}
           terraform plan -out=tfplan
       
       - name: Terraform Apply
         id: apply
         if: success()
         run: |
-          cd terraform/environments/${{ github.event.inputs.environment }}
+          cd $GITHUB_WORKSPACE/modules/${{ github.event.inputs.environment }}
           terraform apply -auto-approve tfplan
       
       - name: Create PR for State Changes
