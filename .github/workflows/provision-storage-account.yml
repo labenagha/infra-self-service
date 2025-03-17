@@ -102,7 +102,7 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE/modules/${{ github.event.inputs.environment }}
           cat > storage-account.auto.tfvars <<EOF
-            storage_account_name               = "${{ github.event.inputs.resourceName }}"
+            resource_name                      = "${{ github.event.inputs.resourceName }}"
             account_kind                       = "${{ steps.parse-json.outputs.account_kind }}"
             account_tier                       = "${{ steps.parse-json.outputs.account_tier }}"
             account_replication_type           = "${{ steps.parse-json.outputs.account_replication }}"
