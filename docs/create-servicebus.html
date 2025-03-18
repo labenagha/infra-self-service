@@ -18,7 +18,7 @@
         Digital Health Infrastructure Self Service Tooling
       </div>
       <div class="user-controls">
-        <!-- Added required elements -->
+        <!-- Required by auth.js -->
         <button id="login-button" style="display: none;">Login</button>
         <span id="username">Not logged in</span>
         <button id="logout-button" onclick="location.href='index.html'">
@@ -104,13 +104,15 @@
           <div style="margin-top: 10px">Processing your request...</div>
         </div>
 
-        <!-- Resource selector (not used on this page) -->
+        <!-- Hidden elements to satisfy auth.js and forms.js -->
         <div id="resource-selector" style="display: none;"></div>
+        <div id="resource-buttons" style="display: none;"></div>
 
         <!-- Form container for Service Bus -->
         <div id="resource-form-container" class="resource-form-container">
           <div class="resource-header">
-            <h1 id="resource-title">Create Service Bus</h1>
+            <!-- Changed id from "resource-title" to "form-title" to match forms.js expectation -->
+            <h1 id="form-title">Create Service Bus</h1>
             <button class="back-button" onclick="location.href='dashboard.html'">
               <svg viewBox="0 0 24 24" width="24" height="24">
                 <path
