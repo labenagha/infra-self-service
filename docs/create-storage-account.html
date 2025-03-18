@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Create Storage Account - Self-Service Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="css/dashboard.css" />
+    <link rel="stylesheet" href="css/create-resource.css" />
+  </head>
+  <body>
+    <!-- Header -->
+    <header class="header">
+      <div class="header-text">Digital Health Infrastructure Self Service Tooling</div>
+      <div class="user-controls">
+        <button id="logout-button" onclick="location.href='index.html'">Logout</button>
+      </div>
+    </header>
+
+    <!-- Main content -->
+    <main class="main-container">
+      <div class="sidebar">
+        <div class="sidebar-header">
+          <img src="assets/tandem-diabetes-logo.png" alt="Tandem Diabetes Care Logo" class="sidebar-logo" />
+          <div class="sidebar-title">Self-Service Portal</div>
+        </div>
+        <nav class="sidebar-nav">
+          <ul>
+            <li><a href="dashboard.html">
+              <svg viewBox="0 0 24 24" width="24" height="24">
+                <path fill="currentColor" d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"></path>
+              </svg> 
+              Dashboard
+            </a></li>
+            <li><a href="#">
+              <svg viewBox="0 0 24 24" width="24" height="24">
+                <path fill="currentColor" d="M19 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h4l3 3 3-3h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 16h-4.83l-.59.59L12 20.17l-1.59-1.59-.58-.58H5V4h14v14z"></path>
+              </svg>
+              Requests
+            </a></li>
+            <li class="active"><a href="#">
+              <svg viewBox="0 0 24 24" width="24" height="24">
+                <path fill="currentColor" d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"></path>
+              </svg>
+              Resources
+            </a></li>
+          </ul>
+        </nav>
+      </div>
+
+      <div class="content">
+        <!-- Breadcrumb -->
+        <div class="breadcrumb">
+          <a href="dashboard.html">Dashboard</a> &gt; <span id="resource-breadcrumb">Create Storage Account</span>
+        </div>
+
+        <!-- Loading indicator -->
+        <div id="loading" style="display: none; text-align: center; margin: 2rem 0;">
+          <svg width="38" height="38" viewBox="0 0 38 38" xmlns="http://www.w3.org/2000/svg" stroke="#00678e">
+            <g fill="none" fill-rule="evenodd">
+              <g transform="translate(1 1)" stroke-width="2">
+                <circle stroke-opacity=".5" cx="18" cy="18" r="18" />
+                <path d="M36 18c0-9.94-8.06-18-18-18">
+                  <animateTransform
+                    attributeName="transform"
+                    type="rotate"
+                    from="0 18 18"
+                    to="360 18 18"
+                    dur="1s"
+                    repeatCount="indefinite"
+                  />
+                </path>
+              </g>
+            </g>
+          </svg>
+          <div style="margin-top: 10px">Processing your request...</div>
+        </div>
+
+        <!-- Form container dedicated to Storage Accounts -->
+        <div id="resource-form-container" class="resource-form-container">
+          <div class="resource-header">
+            <h1 id="resource-title">Create Storage Account</h1>
+            <button class="back-button" onclick="location.href='dashboard.html'">
+              <svg viewBox="0 0 24 24" width="24" height="24">
+                <path fill="currentColor" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"></path>
+              </svg>
+              Back to Dashboard
+            </button>
+          </div>
+
+          <div class="form-container">
+            <form id="resource-form">
+              <div id="form-fields">
+                <!-- The Storage Account form fields will be populated by storage-account-form.js -->
+              </div>
+
+              <!-- Optional environment selector logic if needed -->
+              <div id="environment-selector"></div>
+
+              <div class="form-section">
+                <h3>Validation and Approval</h3>
+                <p class="info-text">Resources created in production environments require additional approval.</p>
+              </div>
+
+              <div class="form-actions">
+                <button type="button" class="secondary-button" onclick="location.href='dashboard.html'">Cancel</button>
+                <button type="submit" class="primary-button">Submit Request</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Confirmation message container -->
+        <div id="confirmation-message" class="confirmation-message" style="display: none;">
+          <div class="confirmation-icon">
+            <svg viewBox="0 0 24 24" width="48" height="48">
+              <path fill="#388e3c" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"></path>
+            </svg>
+          </div>
+          <h2>Storage Account Request Submitted</h2>
+          <p id="confirmation-text">Your Storage Account resource request has been submitted successfully.</p>
+          <p>Request ID: <span id="request-id">REQ-67890</span></p>
+          <div class="confirmation-actions">
+            <button class="secondary-button" onclick="location.href='dashboard.html'">Return to Dashboard</button>
+            <button class="primary-button" onclick="location.reload()">Create Another Storage Account</button>
+          </div>
+        </div>
+
+        <!-- Result message container -->
+        <div id="result-message" style="display: none;"></div>
+      </div>
+    </main>
+
+    <!-- Relevant scripts for Storage Account only -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/storage-account-form.js"></script>
+    <script src="js/storage-account-api.js"></script>
+    <script src="js/create-resource.js"></script>
+  </body>
+</html>
