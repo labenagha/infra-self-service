@@ -7,7 +7,7 @@ This solution provides a form-based interface for infrastructure requests while 
 ```
 ┌─────────────────────┐      ┌──────────────────┐      ┌───────────────────┐      ┌──────────────────┐
 │                     │      │                  │      │                   │      │                  │
-│  Self-Service UI    │──────▶  GitHub API      │──────▶ Approval Process │──────▶  Infra Creation  │
+│  Self-Service UI    │──────▶  GitHub API      │──────▶ Approval Process │──────▶ Infra Creation  │
 │  (GitHub Pages)     │      │  (Create PR)     │      │  (Pull Request)   │      │  (Your Workflow) │
 │                     │      │                  │      │                   │      │                  │
 └─────────────────────┘      └──────────────────┘      └───────────────────┘      └──────────────────┘
