@@ -1,24 +1,49 @@
-# Infrastructure Self-Service Platform
+## Getting Started
+
+### Prerequisites
+
+- GitHub repository with GitHub Pages enabled
+- Service principal with required permissions in Azure
+- GitHub Personal Access Token with `repo` and `read:org` scopes
+
+### Setup
+
+1. Configure your GitHub repository:
+   - Enable GitHub Pages for the `docs/` directory
+   - Add the necessary Terraform configurations in the `modules/` directory
+   - Configure the GitHub Actions secrets for Azure credentials
+
+2. Update the repository references in the code:
+   - Set your repository details in `auth.js`
+   - Update API endpoints in `servicebus-api.js` and `storage-account-api.js`
+
+3. Deploy the application:
+   - Push the code to your repository
+   - Configure GitHub Pages to serve from the `docs/` directory
+
+4. Users will need to:
+   - Create a GitHub Personal Access Token with `repo` and `read:org` scopes
+   - Enter this token when accessing the self-service portal# Infrastructure Self-Service Platform
 
 ## Architecture Overview
 
-This solution provides a form-based interface for infrastructure requests while maintaining full auditability and permission controls without requiring new tools. It leverages GitHub Pages, GitHub Actions, and existing reusable workflows.
+This solution provides a form-based interface for infrastructure requests while maintaining full auditability and permission controls without requiring new tools. It leverages GitHub Pages and directly triggers GitHub Actions workflows to provision resources, using GitHub Personal Access Tokens for authentication and authorization.
 
 ```
-┌─────────────────────┐      ┌──────────────────┐      ┌───────────────────┐      ┌──────────────────┐
-│                     │      │                  │      │                   │      │                  │
-│  Self-Service UI    │──────▶  GitHub API      │──────▶ Approval Process │──────▶ Infra Creation  │
-│  (GitHub Pages)     │      │  (Create PR)     │      │  (Pull Request)   │      │  (Your Workflow) │
-│                     │      │                  │      │                   │      │                  │
-└─────────────────────┘      └──────────────────┘      └───────────────────┘      └──────────────────┘
-        ▲                                                       ▲
-        │                                                       │
-        │                    ┌──────────────────┐               │
-        │                    │                  │               │
-        └────────────────────│  Auth Service    │───────────────┘
-                             │  (GitHub OAuth)  │
-                             │                  │
-                             └──────────────────┘
+┌─────────────────────┐      ┌──────────────────┐                     ┌──────────────────┐
+│                     │      │                  │                     │                  │
+│  Self-Service UI    │──────▶  GitHub API      │────────────────────▶ Infra Creation   │
+│  (GitHub Pages)     │      │  (Workflow       │                     │  (GitHub Actions │
+│                     │      │   Dispatch)      │                     │   Workflow)      │
+└─────────────────────┘      └──────────────────┘                     └──────────────────┘
+        ▲                             ▲
+        │                             │
+        │                             │
+        │                             │
+        │                             │
+        └─────────────────────────────┘
+             GitHub Personal Access Token
+             (For Authentication & API Access)
 ```
 
 ## Components
@@ -27,119 +52,308 @@ This solution provides a form-based interface for infrastructure requests while 
 
 A static web application hosted on GitHub Pages that provides a user-friendly interface for infrastructure requests. The UI dynamically renders forms based on resource type and user permissions.
 
-Key files:
-- `docs/index.html`: Main entry point for the web application
-- `docs/js/auth.js`: Handles GitHub OAuth authentication flow and user permissions
-- `docs/js/api.js`: Manages communication with GitHub API and form submissions
-- `docs/js/service-bus-form.js` & `docs/js/storage-account-form.js`: Generate dynamic forms based on resource schemas
-
-Example of dynamic form generation:
+**Key Code Example:**
 ```javascript
-// Simplified form generation logic
+// Dynamic form generation based on resource schema
 function loadResourceForm(resourceType, permissions) {
-    // Fetch resource schema
-    fetch(`config/resource-templates/${resourceType.toLowerCase()}/schema.json`)
-        .then(response => response.json())
-        .then(schema => {
-            // Create form fields based on schema
-            Object.entries(schema.properties).forEach(([fieldName, fieldConfig]) => {
-                // Create appropriate form field based on type
-                const input = createFormField(fieldName, fieldConfig);
-                
-                // Apply user permission limitations if necessary
-                applyPermissionLimitations(input, fieldName, resourceType, permissions);
-                
-                // Add field to form
-                formContainer.appendChild(input);
-            });
-        });
-}
+  const formContainer = document.getElementById("form-fields");
+  formContainer.innerHTML = "";
 
-### 2. Authentication & Authorization
+  document.getElementById("form-title").textContent = 
+    `Create ${formatResourceName(resourceType)}`;
 
-Uses GitHub OAuth to authenticate users and determine their permissions based on team membership. A serverless Azure Function handles the token exchange process securely.
+  // Fetch schema from GitHub Pages
+  fetch(`https://labenagha.github.io/infra-self-service/config/resource-templates/${resourceType.toLowerCase()}/schema.json`)
+    .then((response) => response.json())
+    .then((schema) => {
+      // Create form fields based on schema
+      Object.entries(schema.properties).forEach(([fieldName, fieldConfig]) => {
+        const fieldContainer = document.createElement("div");
+        fieldContainer.className = "form-field";
 
-Key files:
-- `exchange-token/index.js`: Core Azure Function implementation
-- `src/functions/httpTrigger1.js`: HTTP trigger function that handles CORS and OAuth code exchange
-- `docs/config/permissions.yml`: Defines team-based access permissions and resource limitations
+        // Create label
+        const label = document.createElement("label");
+        label.textContent = fieldConfig.title || formatResourceName(fieldName);
+        label.setAttribute("for", fieldName);
 
-Example of the OAuth token exchange:
-```javascript
-// Azure Function to exchange OAuth code for token
-app.http('httpTrigger1', {
-    methods: ['POST', 'OPTIONS'],
-    authLevel: 'anonymous',
-    handler: async (request, context) => {
-        // Handle CORS preflight
-        if (request.method === "OPTIONS") {
-            return { status: 200, headers: corsHeaders };
-        }
+        // Create appropriate input based on field type
+        let input = createInputElement(fieldName, fieldConfig);
         
-        try {
-            // Get code from request
-            const body = await request.json();
-            const code = body.code;
-            
-            // Exchange with GitHub
-            const response = await fetch('https://github.com/login/oauth/access_token', {
-                method: 'POST',
-                headers: { 'Accept': 'application/json' },
-                body: JSON.stringify({
-                    client_id: process.env.GITHUB_CLIENT_ID,
-                    client_secret: process.env.GITHUB_CLIENT_SECRET,
-                    code: code
-                })
-            });
-            
-            // Return token to client
-            const data = await response.json();
-            return {
-                status: 200,
-                body: JSON.stringify({
-                    access_token: data.access_token,
-                    token_type: data.token_type
-                })
-            };
-        } catch (error) {
-            context.log.error('Error:', error);
-            return { status: 500, body: JSON.stringify({ error: error.message }) };
-        }
-    }
-});
+        // Apply permissions-based limitations
+        applyPermissionLimitations(input, fieldName, resourceType, permissions);
+        
+        fieldContainer.appendChild(label);
+        fieldContainer.appendChild(input);
+        formContainer.appendChild(fieldContainer);
+      });
+    });
+}
 ```
 
-Example of permission configuration:
+### 2. GitHub PAT Authentication
+
+The platform uses GitHub Personal Access Tokens (PATs) for authentication and API access:
+
+**Key Code Example:**
+```javascript
+// PAT-based authentication from auth.js
+function showTokenInputForm() {
+    resultMessage.innerHTML = `
+        <div class="token-form">
+            <h3>Enter GitHub Personal Access Token</h3>
+            <p>To use this application, you need a GitHub Personal Access Token with the following scopes:</p>
+            <ul>
+                <li><code>repo</code> - To access your repositories</li>
+                <li><code>read:org</code> - To read your organization and team membership</li>
+            </ul>
+            
+            <ol>
+                <li>Go to <a href="https://github.com/settings/tokens/new" target="_blank">GitHub Personal Access Tokens</a></li>
+                <li>Enter a note like "Infrastructure Self-Service Tool"</li>
+                <li>Select the <code>repo</code> and <code>read:org</code> scopes</li>
+                <li>Click "Generate token"</li>
+                <li>Copy the generated token and paste it below</li>
+            </ol>
+            
+            <div class="token-input">
+                <input type="text" id="pat-input" placeholder="Paste your GitHub Personal Access Token here">
+                <button id="submit-pat-button" class="btn">Login</button>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('submit-pat-button').addEventListener('click', () => {
+        const patInput = document.getElementById('pat-input');
+        const inputToken = patInput.value.trim();
+        
+        if (inputToken) {
+            // Store the token and proceed
+            storage.setItem('github_token', inputToken);
+            token = inputToken;
+            resultMessage.innerHTML = '';
+            showLoggedInState();
+            fetchUserData();
+        }
+    });
+}
+
+// Fetch user info and team membership from GitHub API
+async function fetchUserData() {
+    try {
+        // Fetch user information
+        const userResponse = await fetch('https://api.github.com/user', {
+            headers: { Authorization: `token ${token}` }
+        });
+        
+        const user = await userResponse.json();
+        
+        // Fetch user's teams
+        const teamsResponse = await fetch('https://api.github.com/user/teams', {
+            headers: { Authorization: `token ${token}` }
+        });
+        
+        const teams = await teamsResponse.json();
+        const teamNames = teams.map(team => team.name);
+        
+        // Determine user permissions based on team membership
+        if (teamNames.includes('cie-team')) {
+            userPermissions = 'admin';
+        } else if (teamNames.includes('epo-team')) {
+            userPermissions = 'contributor';
+        } else {
+            userPermissions = 'viewer';
+        }
+    } catch (error) {
+        console.error('Error fetching user data:', error);
+    }
+}
+```
+
+### 3. Permission Model
+
+Fine-grained control based on GitHub team membership with specific roles, environment access, and resource limitations.
+
+**Key Code Example:**
 ```yaml
-# Simplified permissions.yml
+# permissions.yml - Role-based permissions configuration
 teams:
   cie-team:
     role: admin
-    environments: [dev, test]
-    resources: [ServiceBusTopic, StorageAccount]
+    environments:
+      - dev
+      - test
+    resources:
+      - ServiceBusTopic
+      - StorageAccount
     approval_required: false
-    
+
   epo-team:
     role: contributor
-    environments: [dev, test]
-    resources: [ServiceBusTopic]
+    environments:
+      - dev
+      - test
+    resources:
+      - ServiceBusTopic
     approval_required:
       dev: true
       test: false
     limitations:
       ServiceBusTopic:
         maxSizeInMegabytes: 1024
+      AppService:
+        skuTier: ["Basic", "Standard"]
 ```
 
-### 3. Request Processing
+```javascript
+// Permission checking in auth.js
+async function fetchUserData() {
+    try {
+        // Fetch user information
+        const userResponse = await fetch('https://api.github.com/user', {
+            headers: { Authorization: `token ${token}` }
+        });
+        
+        const user = await userResponse.json();
+        usernameElement.textContent = user.login;
+        
+        // Fetch user's teams
+        const teamsResponse = await fetch('https://api.github.com/user/teams', {
+            headers: { Authorization: `token ${token}` }
+        });
+        
+        const teams = await teamsResponse.json();
+        const teamNames = teams.map(team => team.name);
+        
+        // Determine user permissions based on team membership
+        if (teamNames.includes('cie-team')) {
+            userPermissions = 'admin';
+        } else if (teamNames.includes('epo-team')) {
+            userPermissions = 'contributor';
+        } else {
+            userPermissions = 'viewer';
+        }
+        
+        // Load permissions from your GitHub Pages site
+        loadPermissions();
+    } catch (error) {
+        console.error('Error fetching user data:', error);
+    }
+}
+```
 
-Converts user form input into standardized infrastructure request files, creates pull requests, and manages the approval workflow based on user permissions.
+### 4. Direct Workflow Triggering
 
-Key files:
-- `docs/js/servicebus-api.js` & `docs/js/storage-account-api.js`: Resource-specific API handlers for transforming form data into infrastructure code
-- `docs/config/resource-templates/*/schema.json`: JSON schemas that define the structure and validation rules for each resource type
+Takes user form input and directly triggers the appropriate GitHub Actions workflow via the GitHub API, bypassing the pull request process.
 
-Example of schema definition for a Service Bus Topic:
+**Key Code Example:**
+```javascript
+// Submit Service Bus request (servicebus-api.js)
+async function submitServiceBusRequest() {
+    const form = document.getElementById('resource-form');
+    const formData = new FormData(form);
+    
+    try {
+        // Prepare the inputs for the GitHub Action
+        const workflowInputs = {
+            environment: formData.get('environment'),
+            resourceName: formData.get('name'),
+            messageRetention: formData.get('messageRetention') || '7',
+            maxSizeInMegabytes: formData.get('maxSizeInMegabytes') || '1024',
+            requiresDuplicateDetection: document.getElementById('requiresDuplicateDetection')?.checked ? 'true' : 'false'
+        };
+        
+        // Trigger GitHub Actions workflow
+        const response = await fetch(
+            'https://api.github.com/repos/labenagha/infra-self-service/actions/workflows/provision-servicebus.yml/dispatches',
+            {
+                method: 'POST',
+                headers: {
+                    'Authorization': `token ${token}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    ref: 'main', // or your default branch
+                    inputs: workflowInputs
+                })
+            }
+        );
+        
+        // Show success message
+        if (response.ok) {
+            showSuccessMessage(formData);
+        }
+    } catch (error) {
+        showErrorMessage(error);
+    }
+}
+```
+
+### 5. Infrastructure Provisioning
+
+GitHub Actions workflows that execute Terraform code to provision the requested infrastructure.
+
+**Key Code Example:**
+```yaml
+# provision-servicebus.yml
+name: Provision Service Bus Topic
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment (e.g. dev or test)'
+        required: true
+      resourceName:
+        description: 'Service Bus Topic Name'
+        required: true
+      messageRetention:
+        description: 'Message Retention (Days), default 7'
+        required: false
+        default: '7'
+      maxSizeInMegabytes:
+        description: 'Max Size in MB, default 1024'
+        required: false
+        default: '1024'
+      requiresDuplicateDetection:
+        description: 'Enable duplicate detection (true/false)'
+        required: false
+        default: 'false'
+
+jobs:
+  provision_servicebus:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          enable-AzPSSession: true
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+      
+      - name: Terraform Apply
+        run: |
+          cd $GITHUB_WORKSPACE/modules/${{ github.event.inputs.environment }}
+          
+          # Create a tfvars file from the user inputs
+          echo "resource_name              = \"${{ github.event.inputs.resourceName }}\"" >  request.tfvars
+          echo "message_retention          = \"${{ github.event.inputs.messageRetention }}\"" >> request.tfvars
+          echo "max_size_megabytes         = \"${{ github.event.inputs.maxSizeInMegabytes }}\"" >> request.tfvars
+          echo "requires_duplicate_detection = ${{ github.event.inputs.requiresDuplicateDetection }}" >> request.tfvars
+          
+          terraform apply -auto-approve -var-file=request.tfvars
+```
+
+## Resource Definition
+
+Resources are defined using JSON Schema files that control form rendering and validation.
+
+**Example Service Bus Schema:**
 ```json
 {
   "type": "object",
@@ -172,220 +386,69 @@ Example of schema definition for a Service Bus Topic:
 }
 ```
 
-Example of creating a GitHub Pull Request from form data:
-```javascript
-async function submitResourceRequest(formData, resourceType) {
-    // Create request data from form
-    const requestData = {
-        kind: resourceType,
-        metadata: {
-            name: formData.get('name'),
-            environment: formData.get('environment'),
-            requestedBy: username
-        },
-        spec: {
-            // Add all form fields to spec
-            messageRetention: formData.get('messageRetention'),
-            maxSizeInMegabytes: formData.get('maxSizeInMegabytes'),
-            requiresDuplicateDetection: formData.get('requiresDuplicateDetection')
-        }
-    };
-    
-    // Create branch, file, and pull request in GitHub
-    const branchName = `request/${resourceType.toLowerCase()}-${Date.now()}`;
-    await createBranch(branchName);
-    await createFile(`requests/${resourceType.toLowerCase()}/${formData.get('name')}.yml`, requestData, branchName);
-    const pr = await createPullRequest(branchName, `Request: ${resourceType} - ${formData.get('name')}`);
-    
-    return pr;
-}
-```
-
-### 4. Infrastructure Provisioning
-
-Terraform modules for creating and managing the requested infrastructure resources in a standardized way.
-
-Key files:
-- `modules/service-bus/`: Terraform module for Service Bus provisioning
-- `modules/storage-account/`: Terraform module for Storage Account provisioning
-- `modules/dev/` & `modules/test/`: Environment-specific Terraform configurations
-
-Example of Service Bus Terraform module:
-```terraform
-// Simplified Service Bus Terraform module
-resource "azurerm_servicebus_namespace" "this" {
-  name                = "${var.resource_name}-namespace"
-  location            = var.location
-  resource_group_name = var.resource_group_name
-  sku                 = "Standard"
-  tags                = var.tags
-}
-
-resource "azurerm_servicebus_topic" "this" {
-  name                         = var.resource_name
-  namespace_id                 = azurerm_servicebus_namespace.this.id
-  default_message_ttl          = "P${var.message_retention}D"
-  max_size_in_megabytes        = var.max_size_mb
-  requires_duplicate_detection = var.requires_duplicate_detection
-}
-```
-
-Example of environment-specific configuration:
-```terraform
-// Simplified environment configuration
-locals {
-  environment = "dev"
-  location    = "eastus"
-  common_tags = {
-    Environment = local.environment
-    ManagedBy   = "terraform"
-  }
-}
-
-resource "azurerm_resource_group" "servicebus" {
-  name     = "servicebus-${local.environment}"
-  location = local.location
-  tags     = local.common_tags
-}
-
-module "service_bus" {
-  source = "../service-bus"
-
-  resource_name                = var.resource_name
-  message_retention            = var.message_retention
-  max_size_mb                  = var.max_size_mb
-  requires_duplicate_detection = var.requires_duplicate_detection
-
-  resource_group_name = azurerm_resource_group.servicebus.name
-  location            = local.location
-  tags                = local.common_tags
-}
-```
-
-### 5. Permission Model
-
-Fine-grained control based on GitHub team membership with specific roles, environment access, and resource limitations.
-
-Permission system features:
-- Role-based access (admin for CIE team, contributor for DEV team)
-- Environment-specific permissions (dev, test, prod)
-- Resource type restrictions based on team membership
-- Approval requirements that vary by environment
-- Resource-specific limitations (e.g., max sizes, allowed SKUs)
-
-Example of permission validation in the UI:
-```javascript
-function initializeApp() {
-    // Fetch user info and teams from GitHub
-    Promise.all([
-        fetch('https://api.github.com/user', { headers: { Authorization: `token ${token}` } }),
-        fetch('https://api.github.com/user/teams', { headers: { Authorization: `token ${token}` } })
-    ])
-    .then(([userResponse, teamsResponse]) => Promise.all([userResponse.json(), teamsResponse.json()]))
-    .then(([user, teams]) => {
-        // Determine user's permission level
-        const teamNames = teams.map(team => team.name.toLowerCase());
-        
-        if (teamNames.includes('cie-team')) {
-            userPermissions = 'admin';
-        } else if (teamNames.includes('epo-team')) {
-            userPermissions = 'contributor';
-        } else {
-            userPermissions = 'viewer';
-        }
-        
-        // Load available resources based on permissions
-        return fetch('config/permissions.yml');
-    })
-    .then(response => response.text())
-    .then(yamlText => {
-        const permissions = parseYaml(yamlText);
-        
-        // Filter resources based on user permissions
-        const availableResources = 
-            userPermissions === 'admin' 
-                ? permissions.teams['cie-team'].resources
-                : permissions.teams['epo-team'].resources;
-                
-        // Show only allowed resources in the UI
-        displayResourceOptions(availableResources);
-    });
-}
-```
-
-Example of GitHub Action for validation and approval:
-```yaml
-# Simplified infrastructure-request.yml
-name: Process Infrastructure Request
-
-on:
-  pull_request:
-    paths: ['requests/**/*.yml']
-
-jobs:
-  validate:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Validate request permissions
-        run: |
-          # Get requester's team membership
-          TEAMS=$(gh api user/teams | jq -r '.[].name')
-          
-          # Check if user is in admin team (auto-approve)
-          if echo "$TEAMS" | grep -q "cie-team"; then
-            echo "User is admin, approving request"
-            echo "IS_ADMIN=true" >> $GITHUB_ENV
-            exit 0
-          fi
-          
-          # For contributor, check if approval required for environment
-          ENVIRONMENT=$(yq -r '.metadata.environment' $REQUEST_FILE)
-          APPROVAL_REQUIRED=$(yq -r '.teams.epo-team.approval_required.'$ENVIRONMENT ./config/permissions.yml)
-          
-          if [ "$APPROVAL_REQUIRED" = "true" ]; then
-            echo "REQUIRES_APPROVAL=true" >> $GITHUB_ENV
-          else
-            echo "REQUIRES_APPROVAL=false" >> $GITHUB_ENV
-          fi
-          
-      - name: Auto-approve if allowed
-        if: env.IS_ADMIN == 'true' || env.REQUIRES_APPROVAL == 'false'
-        uses: hmarr/auto-approve-action@v3
-          
-      - name: Request review if needed
-        if: env.REQUIRES_APPROVAL == 'true'
-        run: gh pr edit "${{ github.event.pull_request.number }}" --add-reviewer "cie-team"
-```
-
 ## User Journeys
 
-### DEV Team Member Request Flow
+### DEV Team Member (Contributor)
 
 1. Developer navigates to the self-service portal
 2. Authenticates with GitHub credentials
-3. UI shows only the resource types they can create (ServiceBusTopic, AppService)
+3. UI shows only the resource types they can create (ServiceBusTopic)
 4. They select a resource type and fill out a form with appropriate validation
 5. System validates input against their permission limits
-6. Form submission creates a PR with appropriate infrastructure code
-7. For dev environment: auto-approved and processed
-8. For test environment: requires CIE team approval
+6. Form submission directly triggers a GitHub Actions workflow with the input parameters
+7. The workflow executes based on the environment configuration
+   - Environment-specific behavior is configured in the permissions.yml file
+   - Some environments may have approval requirements (though currently implemented at the API level, not through PRs)
 
-### CIE Team Member Request Flow
+### CIE Team Member (Admin)
 
 1. CIE team member authenticates
-2. UI shows all available resource types
-3. They can create resources in any environment
-4. Requests are automatically approved
+2. UI shows all available resource types (ServiceBusTopic, StorageAccount)
+3. They can create resources in any environment without limits
+4. Requests are automatically approved and processed
 5. They can also review and approve DEV team requests
 
-## Project Structure
+## How It All Works Together
 
-This repository is organized into several key directories:
-- `/docs`: Contains the static web UI hosted on GitHub Pages
-- `/modules`: Terraform modules for infrastructure provisioning
-- `/exchange-token` & `/src`: Azure Function for OAuth token exchange
-- Configuration files for permissions, environments, and resource templates
+Here's a step-by-step overview of how the entire system operates:
 
-The project leverages GitHub's built-in capabilities for hosting, authentication, and workflow automation to create a complete infrastructure self-service solution without requiring additional tools.
+1. **Authentication Flow**:
+   - User accesses the GitHub Pages site and is prompted to enter their GitHub Personal Access Token
+   - The system stores this token and uses it to determine the user's GitHub team membership
+   - Based on team membership, the user is assigned a role (admin/contributor/viewer)
+   - The UI dynamically adjusts to show only resources the user has permission to create
+
+2. **Form Generation**:
+   - When a user selects a resource type (e.g., Service Bus Topic or Storage Account)
+   - The system fetches the corresponding JSON schema from GitHub Pages
+   - Form fields are dynamically generated based on the schema definitions
+   - Field limitations are applied based on the user's permissions (e.g., size limitations for EPO team)
+
+3. **Resource Request**:
+   - User completes the form with their desired resource configuration
+   - On submission, the client-side code prepares a payload with all parameters
+   - Using the GitHub PAT, the system directly triggers a GitHub Actions workflow via the GitHub API
+   - The specific workflow to trigger depends on the resource type (provision-servicebus.yml or provision-storage-account.yml)
+
+4. **Infrastructure Deployment**:
+   - The GitHub Actions workflow runs with the user-provided parameters
+   - The workflow accesses Azure using stored credentials (AZURE_CREDENTIALS secret)
+   - Terraform is initialized and configured with the appropriate variables
+   - Infrastructure is deployed according to the modules in the repository
+   - Success or failure status is provided back to the user
+
+5. **Authorization Model**:
+   - Access controls are enforced entirely at the client side based on GitHub team membership
+   - Admin users (CIE team) have full access to all resources and environments
+   - Contributor users (EPO team) have limited access based on permissions.yml configuration
+   - Resource limitations and environment restrictions are defined in the permissions.yml file
+
+This approach provides a secure, auditable, and self-service method for provisioning infrastructure without requiring users to have direct access to production environments or Terraform code.
+
+## Adding New Resource Types
+
+1. Create a schema file in `config/resource-templates/your-resource/schema.json`
+2. Add form generation code in `js/your-resource-form.js`
+3. Add API request handler in `js/your-resource-api.js`
+4. Create a GitHub Actions workflow in `.github/workflows/provision-your-resource.yml`
+5. Update permissions.yml to include your new resource type
