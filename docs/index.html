@@ -4,367 +4,69 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Tandem Diabetes Infrastructure Self-Service Portal - Login</title>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
-      rel="stylesheet"
-    />
-    <style>
-      :root {
-        --tandem-blue: #00678e;
-        --tandem-blue-light: #0095d9;
-        --background-color: #f5f7fa;
-        --text-color: #333;
-        --border-color: #e0e4e8;
-      }
-
-      * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
-
-      body {
-        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
-          Roboto, sans-serif;
-        line-height: 1.6;
-        color: var(--text-color);
-        background-color: var(--background-color);
-        margin: 0;
-      }
-
-      /* Header */
-      .header {
-        background-color: #00678e;
-        color: white;
-        padding: 1rem 2rem;
-        position: sticky;
-        top: 0;
-        z-index: 10;
-      }
-
-      .header-container {
-        max-width: 1200px;
-        margin: 0 auto;
-        display: flex;
-        align-items: center;
-      }
-
-      .logo {
-        height: 30px;
-        width: auto;
-        margin-right: 1rem;
-      }
-
-      /* .header-title {
-        color: white;
-        font-size: 1.2rem;
-        font-weight: 500;
-      } */
-
-      /* Main content */
-      .main-container {
-        display: flex;
-        max-width: 1200px;
-        margin: 2rem auto;
-        gap: 2rem;
-        padding: 0 2rem;
-      }
-
-      .branding-container {
-        flex: 1;
-        background-color: white;
-        padding: 3rem 2rem;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        border-radius: 0.5rem;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-      }
-
-      .branding-logo {
-        width: 150px;
-        margin-bottom: 2rem;
-      }
-
-      .portal-title {
-        font-size: 1.75rem;
-        color: var(--tandem-blue);
-        margin-bottom: 1rem;
-        font-weight: 600;
-      }
-
-      .tagline {
-        color: #666;
-        font-size: 1rem;
-      }
-
-      .login-container {
-        flex: 1;
-        background-color: white;
-        padding: 2rem;
-        border-radius: 0.5rem;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-      }
-
-      .login-title {
-        font-size: 1.5rem;
-        margin-bottom: 1.5rem;
-        color: var(--text-color);
-      }
-
-      .login-description {
-        margin-bottom: 1.5rem;
-      }
-
-      .scopes-list {
-        margin-bottom: 1.5rem;
-        list-style-type: none;
-      }
-
-      .scopes-list li {
-        margin-bottom: 0.75rem;
-        display: flex;
-        align-items: flex-start;
-      }
-
-      .scope-tag {
-        background-color: #f0f2f5;
-        padding: 0.15rem 0.4rem;
-        border-radius: 3px;
-        font-family: monospace;
-        font-size: 0.9em;
-        color: var(--tandem-blue);
-        margin-right: 0.5rem;
-      }
-
-      .instructions {
-        background-color: #f7f8fa;
-        border-radius: 0.5rem;
-        padding: 1.5rem;
-        margin: 1.5rem 0;
-      }
-
-      .instructions-title {
-        font-size: 1.1rem;
-        margin-bottom: 1rem;
-        color: var(--tandem-blue);
-      }
-
-      .instructions-list {
-        list-style-type: decimal;
-        margin-left: 1.5rem;
-      }
-
-      .instructions-list li {
-        margin-bottom: 0.75rem;
-      }
-
-      .token-input {
-        margin-top: 2rem;
-      }
-
-      input[type="text"] {
-        width: 100%;
-        padding: 0.75rem;
-        border: 1px solid #ddd;
-        border-radius: 0.25rem;
-        font-size: 0.95rem;
-        margin-bottom: 1rem;
-      }
-
-      .login-button {
-        background-color: var(--tandem-blue);
-        color: white;
-        border: none;
-        border-radius: 0.25rem;
-        padding: 0.75rem 1.5rem;
-        font-size: 0.95rem;
-        cursor: pointer;
-        font-weight: 500;
-      }
-
-      .login-button:hover {
-        background-color: #005578;
-      }
-
-      .security-note {
-        margin-top: 1.5rem;
-        font-size: 0.85rem;
-        color: #666;
-        text-align: center;
-      }
-
-      /* Footer */
-      .footer {
-        background-color: #00678e;
-        color: white;
-        padding: 1.5rem 0;
-        margin-top: 3rem;
-      }
-
-      .footer-container {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 0 2rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-
-      .copyright {
-        font-size: 0.85rem;
-        color: rgba(255, 255, 255, 0.8);
-      }
-
-      .footer-links {
-        display: flex;
-        gap: 1.5rem;
-      }
-
-      .footer-link {
-        color: white;
-        text-decoration: none;
-        font-size: 0.85rem;
-      }
-
-      .footer-link:hover {
-        text-decoration: underline;
-      }
-
-      /* Responsive */
-      @media (max-width: 768px) {
-        .main-container {
-          flex-direction: column;
-        }
-      }
-    </style>
-    <script>
-      (function () {
-        if (
-          window.location.search.includes("code=") &&
-          !window.location.pathname.includes("/auth/github/callback")
-        ) {
-          const urlParams = new URLSearchParams(window.location.search);
-          const code = urlParams.get("code");
-
-          if (code) {
-            sessionStorage.setItem("github_auth_code", code);
-            console.log("OAuth code detected, processing login...");
-          }
-        }
-      })();
-    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="css/login.css" />
   </head>
   <body>
     <!-- Header -->
     <header class="header">
-      <div class="header-container">
-        <img
-          src="assets/tandem-diabetes-logo.png"
-          alt="Tandem Diabetes Care Logo"
-          class="logo"
-        />
-        <!-- <h1 class="header-title">Tandem Internal Tools</h1> -->
-      </div>
+      <div class="header-text">Digital Health infrastructure self service tooling</div>
     </header>
 
     <!-- Main content -->
     <main class="main-container">
-      <div class="branding-container">
-        <img
-          src="assets/tandem-diabetes-logo.png"
-          alt="Tandem Diabetes Care Logo"
-          class="branding-logo"
-        />
-        <h1 class="portal-title">Infrastructure Self-Service Portal</h1>
-        <p class="tagline">
-          Streamlined infrastructure management for Tandem Diabetes Care
-        </p>
-      </div>
+      <div class="unified-container">
+        <div class="branding-section">
+          <img src="assets/tandem-diabetes-logo.png" alt="Tandem Diabetes Care Logo" class="branding-logo" />
+          <p class="tagline">Streamlined infrastructure management for Tandem Diabetes Care</p>
+        </div>
 
-      <div class="login-container">
-        <h2 class="login-title">Login to Access</h2>
-        <p class="login-description">
-          To use this application, you need a GitHub Personal Access Token with
-          the following scopes:
-        </p>
+        <hr class="divider">
 
-        <ul class="scopes-list">
-          <li>
-            <span class="scope-tag">repo</span>
-            - Full control of private repositories
-          </li>
-          <li>
-            <span class="scope-tag">workflow</span>
-            - Permission to trigger GitHub Actions workflows
-          </li>
-          <li>
-            <span class="scope-tag">read:org</span>
-            - To verify organization and team membership
-          </li>
-        </ul>
+        <div class="login-section">
+          <p class="login-description">
+            To use this application, you need a GitHub Personal Access Token with the following scopes:
+          </p>
 
-        <div class="instructions">
-          <h3 class="instructions-title">How to generate a token:</h3>
-          <ol class="instructions-list">
+          <ul class="scopes-list">
             <li>
-              Go to
-              <a href="https://github.com/settings/tokens/new" target="_blank"
-                >GitHub Personal Access Tokens</a
-              >
+              <span class="scope-tag">repo</span>
+              <span class="scope-description">- Full control of private repositories</span>
             </li>
-            <li>Enter a note like "Infrastructure Self-Service Tool"</li>
-            <li>Select the required scopes listed above</li>
-            <li>Click "Generate token"</li>
-            <li>Copy the generated token and paste it below</li>
-          </ol>
-        </div>
+            <li>
+              <span class="scope-tag">workflow</span>
+              <span class="scope-description">- Permission to trigger GitHub Actions workflows</span>
+            </li>
+            <li>
+              <span class="scope-tag">read:org</span>
+              <span class="scope-description">- To verify organization and team membership</span>
+            </li>
+          </ul>
+          
+          <div class="instructions-box">
+            <div class="instructions-left-border"></div>
+            <div class="instructions-content">
+              <h3 class="instructions-title">How to generate a token:</h3>
+              <ol class="instructions-list">
+                <li>Go to <a href="https://github.com/settings/tokens/new" target="_blank" class="external-link">GitHub Personal Access Tokens</a></li>
+                <li>Enter a note like "Infrastructure Self-Service Tool"</li>
+                <li>Select the required scopes listed above</li>
+                <li>Click "Generate token" and copy it</li>
+              </ol>
+            </div>
+          </div>
 
-        <div class="token-input">
-          <input
-            type="text"
-            id="pat-input"
-            placeholder="Paste your GitHub Personal Access Token here"
-          />
-          <button class="login-button" id="login-button">Login</button>
-        </div>
+          <div class="token-input">
+            <input type="text" id="pat-input" placeholder="Paste your GitHub Personal Access Token here" />
+            <button class="login-button" id="login-button">Login</button>
+          </div>
 
-        <p class="security-note">
-          Token is securely transmitted and not stored permanently.
-        </p>
+          <p class="security-note">Token is securely transmitted and not stored permanently.</p>
+        </div>
       </div>
     </main>
 
-    <!-- Footer -->
-    <footer class="footer">
-      <div class="footer-container">
-        <p class="copyright">
-          &copy; 2025 Tandem Diabetes Care. All rights reserved.
-        </p>
-        <div class="footer-links">
-          <a href="#" class="footer-link">Privacy Policy</a>
-          <a href="#" class="footer-link">Terms of Service</a>
-          <a href="#" class="footer-link">Contact Support</a>
-        </div>
-      </div>
-    </footer>
-
     <script src="js/auth.js"></script>
-    <script>
-      // Login button event handler
-      document
-        .getElementById("login-button")
-        .addEventListener("click", function () {
-          const token = document.getElementById("pat-input").value;
-          if (token) {
-            // Store token and redirect - using your auth.js file for validation
-            sessionStorage.setItem("github_token", token);
-            window.location.href = "dashboard.html";
-          } else {
-            alert("Please enter a valid token");
-          }
-        });
-    </script>
+    <script src="js/login.js"></script>
   </body>
 </html>

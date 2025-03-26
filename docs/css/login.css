@@ -1,0 +1,252 @@
+/* Variables */
+:root {
+    --tandem-blue: #00678e;
+    --tandem-blue-light: #0095d9;
+    --tandem-blue-dark: #005578;
+    --background-color: #f0f3f8;
+    --text-color: #333;
+    --text-secondary: #666;
+    --border-color: #e0e4e8;
+    --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --transition-speed: 0.3s;
+  }
+  
+  /* Base styles */
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  
+  html, body {
+    height: 100%;
+    overflow-y: auto; /* Changed from hidden to auto to allow scrolling */
+  }
+  
+  body {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.6;
+    color: var(--text-color);
+    background-color: var(--background-color);
+    display: flex;
+    flex-direction: column;
+  }
+  
+  a {
+    color: var(--tandem-blue);
+    text-decoration: none;
+  }
+  
+  a:hover {
+    text-decoration: underline;
+  }
+  
+  /* Header styles */
+  .header {
+    background-color: var(--tandem-blue);
+    color: white;
+    padding: 0.75rem 2rem;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  
+  .header-text {
+    color: white;
+    font-size: 1.2rem;
+    font-weight: 400;
+    line-height: 1.7;
+    letter-spacing: -0.75px;
+  }
+  
+  /* Main content styles */
+  .main-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* Changed from center to flex-start */
+    flex: 1;
+    padding: 1rem;
+    overflow-y: auto; /* Allow container to scroll if needed */
+  }
+  
+  .unified-container {
+    width: 100%;
+    max-width: 1000px;
+    background-color: white;
+    border-radius: 6px;
+    box-shadow: var(--card-shadow);
+    margin-bottom: 2rem; /* Add space at bottom */
+  }
+  
+  .branding-section {
+    padding: 2rem 2rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  
+  .branding-logo {
+    width: 70px;
+    margin-bottom: 1.5rem;
+  }
+  
+  .tagline {
+    color: var(--text-secondary);
+    font-size: 1rem;
+  }
+  
+  .divider {
+    border: 0;
+    height: 1px;
+    background-color: var(--border-color);
+    margin: 0;
+  }
+  
+  .login-section {
+    padding: 2rem;
+  }
+  
+  .login-description {
+    margin-bottom: 1.5rem;
+  }
+  
+  /* Scopes styling */
+  .scopes-list {
+    margin-bottom: 2rem;
+    list-style-type: none;
+  }
+  
+  .scopes-list li {
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+  }
+  
+  .scope-tag {
+    display: inline-block;
+    background-color: #f0f2f5;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.9rem;
+    color: var(--tandem-blue);
+    margin-right: 0.75rem;
+    min-width: 80px;
+    text-align: center;
+  }
+  
+  /* Instructions styling */
+  .instructions-box {
+    background-color: #f7f8fa;
+    border-radius: 6px;
+    margin: 2rem 0;
+    display: flex;
+    overflow: hidden;
+  }
+  
+  .instructions-left-border {
+    width: 4px;
+    background-color: var(--tandem-blue-light);
+  }
+  
+  .instructions-content {
+    padding: 1.5rem;
+    flex: 1;
+  }
+  
+  .instructions-title {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    color: var(--tandem-blue);
+    font-weight: 500;
+  }
+  
+  .instructions-list {
+    list-style-type: decimal;
+    margin-left: 1.5rem;
+  }
+  
+  .instructions-list li {
+    margin-bottom: 0.75rem;
+  }
+  
+  /* Token input and button styling */
+  .token-input {
+    margin: 2rem 0;
+  }
+  
+  input[type="text"] {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  .login-button {
+    background-color: var(--tandem-blue);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 0.75rem 1.75rem;
+    font-size: 1rem;
+    cursor: pointer;
+    font-weight: 500;
+    display: block;
+  }
+  
+  .security-note {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    text-align: center;
+    margin-top: 1rem;
+  }
+  
+  /* Footer styles */
+  .footer {
+    background-color: var(--tandem-blue);
+    color: white;
+    padding: 0.75rem 0;
+    text-align: center;
+  }
+  
+  .footer-container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+  }
+  
+  .copyright {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.8);
+  }
+  
+  /* Responsive adjustments */
+  @media (max-height: 800px) {
+    .main-container {
+      padding-top: 0.5rem;
+      padding-bottom: 0.5rem;
+    }
+    
+    .login-section {
+      padding: 1.5rem;
+    }
+    
+    .branding-section {
+      padding: 1.5rem 2rem 1rem;
+    }
+    
+    .instructions-box {
+      margin: 1.5rem 0;
+    }
+    
+    .token-input {
+      margin: 1.5rem 0;
+    }
+  }

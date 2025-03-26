@@ -3,547 +3,175 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Infrastructure Self-Service Portal</title>
+    <title>Infrastructure Self-Service Portal - Dashboard</title>
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
-    <style>
-      :root {
-        --tandem-blue: #00678e;
-        --tandem-blue-light: #0095d9;
-        --background-color: #f5f7fa;
-        --text-color: #333;
-        --border-color: #e0e4e8;
-      }
-
-      * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
-
-      body {
-        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
-          Roboto, sans-serif;
-        line-height: 1.6;
-        color: var(--text-color);
-        background-color: var(--background-color);
-        margin: 0;
-      }
-
-      /* Sticky header */
-      .header {
-        background-color: var(--tandem-blue);
-        color: white;
-        padding: 1rem 2rem;
-        position: sticky;
-        top: 0;
-        z-index: 10;
-      }
-
-      .header-container {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-
-      .header-left {
-        display: flex;
-        align-items: center;
-      }
-
-      .logo {
-        height: 30px;
-        width: auto;
-        margin-right: 1rem;
-      }
-
-      /* .header-title {
-        color: white;
-        font-size: 1.2rem;
-        font-weight: 500;
-      } */
-
-      #user-info {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-      }
-
-      #username {
-        color: white;
-        font-size: 0.95rem;
-      }
-
-      #login-button {
-        background-color: white;
-        color: var(--tandem-blue);
-        border: none;
-        border-radius: 4px;
-        padding: 0.5rem 1rem;
-        font-size: 0.9rem;
-        cursor: pointer;
-        display: none;
-      }
-
-      #logout-button {
-        background-color: transparent;
-        color: white;
-        border: 1px solid white;
-        border-radius: 4px;
-        padding: 0.5rem 1rem;
-        font-size: 0.9rem;
-        cursor: pointer;
-      }
-
-      /* Main content */
-      .main-content {
-        max-width: 1200px;
-        margin: 2rem auto;
-        padding: 0 2rem;
-      }
-
-      /* App title */
-      .app-title-container {
-        margin-bottom: 2rem;
-      }
-
-      .app-title {
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: var(--tandem-blue);
-        margin-bottom: 0.5rem;
-      }
-
-      .app-description {
-        color: #666;
-        font-size: 0.95rem;
-      }
-
-      /* Loading indicator */
-      #loading {
-        display: none;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        margin: 3rem 0;
-      }
-
-      /* Resource selector */
-      #resource-selector {
-        background-color: white;
-        border-radius: 8px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        padding: 2rem;
-        margin-bottom: 2rem;
-        display: none;
-      }
-
-      #resource-selector h2 {
-        color: var(--tandem-blue);
-        font-size: 1.25rem;
-        margin-bottom: 1.5rem;
-      }
-
-      #resource-buttons {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-        gap: 1.5rem;
-      }
-
-      .resource-button {
-        background-color: white;
-        border: 1px solid var(--border-color);
-        border-radius: 6px;
-        padding: 1.5rem;
-        text-align: center;
-        font-size: 1rem;
-        font-weight: 500;
-        color: var(--text-color);
-        cursor: pointer;
-        transition: all 0.2s ease;
-      }
-
-      .resource-button:hover {
-        border-color: var(--tandem-blue);
-        color: var(--tandem-blue);
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-      }
-
-      /* Form container */
-      #resource-form-container {
-        background-color: white;
-        border-radius: 8px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        padding: 2rem;
-        display: none;
-      }
-
-      #form-title {
-        color: var(--tandem-blue);
-        font-size: 1.25rem;
-        margin-bottom: 1.5rem;
-      }
-
-      .form-field {
-        margin-bottom: 1.5rem;
-      }
-
-      .form-field label {
-        display: block;
-        margin-bottom: 0.5rem;
-        font-weight: 500;
-      }
-
-      .form-field input,
-      .form-field select {
-        width: 100%;
-        padding: 0.75rem;
-        border: 1px solid var(--border-color);
-        border-radius: 4px;
-        font-size: 0.95rem;
-      }
-
-      .form-field input[type="checkbox"] {
-        width: auto;
-        margin-right: 0.5rem;
-      }
-
-      /* Help text */
-      .help-text {
-        font-size: 0.85rem;
-        color: #666;
-        margin-top: 0.3rem;
-        margin-bottom: 0.5rem;
-      }
-
-      /* Section headers */
-      .section-header {
-        font-size: 1.1rem;
-        color: var(--tandem-blue);
-        margin-top: 1.5rem;
-        margin-bottom: 1rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 1px solid var(--border-color);
-      }
-
-      /* Environment selector */
-      #environment-selector {
-        margin-top: 2rem;
-        padding-top: 1rem;
-        border-top: 1px solid var(--border-color);
-      }
-
-      #environment-selector label {
-        display: block;
-        margin-bottom: 0.5rem;
-        font-weight: 500;
-      }
-
-      #environment-selector select {
-        width: 100%;
-        padding: 0.75rem;
-        border: 1px solid var(--border-color);
-        border-radius: 4px;
-        font-size: 0.95rem;
-      }
-
-      .approval-info {
-        margin-top: 0.5rem;
-        color: #e67e22;
-        font-size: 0.9rem;
-      }
-
-      /* Form submit button */
-      #resource-form button[type="submit"] {
-        background-color: var(--tandem-blue);
-        color: white;
-        border: none;
-        border-radius: 4px;
-        padding: 0.75rem 1.5rem;
-        font-size: 0.95rem;
-        cursor: pointer;
-        font-weight: 500;
-      }
-
-      /* Result message */
-      #result-message {
-        margin-top: 2rem;
-      }
-
-      .success-message {
-        background-color: #e8f5e9;
-        border: 1px solid #c8e6c9;
-        border-left: 4px solid #4caf50;
-        border-radius: 4px;
-        padding: 1.5rem;
-      }
-
-      .success-message h3 {
-        color: #2e7d32;
-        margin-bottom: 1rem;
-      }
-
-      .success-message p {
-        margin-bottom: 0.75rem;
-      }
-
-      .success-message a {
-        color: var(--tandem-blue);
-        text-decoration: none;
-        font-weight: 500;
-        display: inline-block;
-        margin-top: 0.5rem;
-      }
-
-      .success-message a:hover {
-        text-decoration: underline;
-      }
-
-      .success-message button {
-        background-color: var(--tandem-blue);
-        color: white;
-        border: none;
-        border-radius: 4px;
-        padding: 0.5rem 1rem;
-        font-size: 0.9rem;
-        cursor: pointer;
-        margin-top: 1rem;
-      }
-
-      .error-message {
-        background-color: #ffebee;
-        border: 1px solid #ffcdd2;
-        border-left: 4px solid #f44336;
-        border-radius: 4px;
-        padding: 1.5rem;
-      }
-
-      .error-message h3 {
-        color: #c62828;
-        margin-bottom: 1rem;
-      }
-
-      .error-message button {
-        background-color: var(--tandem-blue);
-        color: white;
-        border: none;
-        border-radius: 4px;
-        padding: 0.5rem 1rem;
-        font-size: 0.9rem;
-        cursor: pointer;
-        margin-top: 1rem;
-      }
-
-      .message,
-      .info-message {
-        background-color: #e3f2fd;
-        border: 1px solid #bbdefb;
-        border-left: 4px solid #2196f3;
-        border-radius: 4px;
-        padding: 1.5rem;
-      }
-
-      .message button,
-      .info-message button {
-        background-color: var(--tandem-blue);
-        color: white;
-        border: none;
-        border-radius: 4px;
-        padding: 0.5rem 1rem;
-        font-size: 0.9rem;
-        cursor: pointer;
-        margin-top: 1rem;
-      }
-
-      /* Token form */
-      .token-form {
-        margin-top: 1rem;
-      }
-
-      .token-form h3 {
-        font-size: 1.3rem;
-        color: var(--tandem-blue);
-        margin-bottom: 1rem;
-      }
-
-      .token-form p {
-        margin-bottom: 1rem;
-      }
-
-      .token-form ul,
-      .token-form ol {
-        margin-left: 1.5rem;
-        margin-bottom: 1.5rem;
-      }
-
-      .token-form li {
-        margin-bottom: 0.5rem;
-      }
-
-      .token-form code {
-        background-color: #f0f2f5;
-        padding: 0.15rem 0.4rem;
-        border-radius: 3px;
-        font-family: monospace;
-        font-size: 0.9em;
-        color: var(--tandem-blue);
-      }
-
-      .token-input {
-        margin-top: 1.5rem;
-        display: flex;
-        gap: 0.5rem;
-      }
-
-      .token-input input {
-        flex: 1;
-        padding: 0.75rem;
-        border: 1px solid var(--border-color);
-        border-radius: 4px;
-        font-size: 0.9rem;
-      }
-
-      .token-input .btn,
-      .token-input button {
-        background-color: var(--tandem-blue);
-        color: white;
-        border: none;
-        border-radius: 4px;
-        padding: 0.5rem 1rem;
-        font-size: 0.9rem;
-        cursor: pointer;
-      }
-    </style>
+    <link rel="stylesheet" href="css/dashboard.css" />
+    <link rel="stylesheet" href="css/search-pagination.css" />
   </head>
   <body>
-    <!-- Sticky Header -->
+    <!-- Header -->
     <header class="header">
-      <div class="header-container">
-        <div class="header-left">
-          <img
-            src="assets/tandem-diabetes-logo.png"
-            alt="Tandem Diabetes Care Logo"
-            class="logo"
-          />
-          <!-- <h1 class="header-title">Tandem Internal Tools</h1> -->
-        </div>
-        <div id="user-info">
-          <span id="username">Not logged in</span>
-          <button id="login-button">Login with GitHub</button>
-          <button id="logout-button">Logout</button>
-        </div>
+      <div class="header-text">
+        Digital Health infrastructure self service tooling
+      </div>
+      <div class="user-controls">
+        <button id="logout-button" onclick="location.href='index.html'">
+          Logout
+        </button>
       </div>
     </header>
 
     <!-- Main content -->
-    <main class="main-content">
-      <!-- App title -->
-      <div class="app-title-container">
-        <h1 class="app-title">Infrastructure Self-Service Portal</h1>
-        <p class="app-description">
-          Create and manage infrastructure resources
-        </p>
+    <main class="main-container">
+      <div class="sidebar">
+        <div class="sidebar-header">
+          <img
+            src="assets/tandem-diabetes-logo.png"
+            alt="Tandem Diabetes Care Logo"
+            class="sidebar-logo"
+          />
+          <div class="sidebar-title">Self-Service Portal</div>
+        </div>
+        <nav class="sidebar-nav">
+          <ul>
+            <li class="active">
+              <a href="#"
+                ><svg viewBox="0 0 24 24" width="24" height="24">
+                  <path
+                    fill="currentColor"
+                    d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"
+                  ></path>
+                </svg>
+                Dashboard</a
+              >
+            </li>
+            <li>
+              <a href="#"
+                ><svg viewBox="0 0 24 24" width="24" height="24">
+                  <path
+                    fill="currentColor"
+                    d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"
+                  ></path>
+                </svg>
+                Resources</a
+              >
+            </li>
+          </ul>
+        </nav>
       </div>
 
-      <!-- Loading indicator -->
-      <div id="loading">
-        <svg
-          width="38"
-          height="38"
-          viewBox="0 0 38 38"
-          xmlns="http://www.w3.org/2000/svg"
-          stroke="#00678e"
-        >
-          <g fill="none" fill-rule="evenodd">
-            <g transform="translate(1 1)" stroke-width="2">
-              <circle stroke-opacity=".5" cx="18" cy="18" r="18" />
-              <path d="M36 18c0-9.94-8.06-18-18-18">
-                <animateTransform
-                  attributeName="transform"
-                  type="rotate"
-                  from="0 18 18"
-                  to="360 18 18"
-                  dur="1s"
-                  repeatCount="indefinite"
+      <div class="content">
+        <div class="dashboard-header">
+          <h1>Overview</h1>
+          <p class="last-login">
+            Last login:
+            <span id="last-login-time">March 18, 2025 10:45 AM</span>
+          </p>
+        </div>
+
+        <!-- Search container -->
+        <div class="search-container">
+          <div class="search-input-wrapper">
+            <svg class="search-icon" viewBox="0 0 24 24" width="18" height="18">
+              <path
+                fill="currentColor"
+                d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
+              />
+            </svg>
+            <input
+              type="text"
+              id="resource-search"
+              placeholder="Search resources by name..."
+            />
+            <button id="clear-search" class="clear-search-button">
+              <svg viewBox="0 0 24 24" width="18" height="18">
+                <path
+                  fill="currentColor"
+                  d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
                 />
-              </path>
-            </g>
-          </g>
-        </svg>
-        <div style="margin-top: 10px">Loading your information...</div>
-      </div>
-
-      <!-- Resource selector -->
-      <div id="resource-selector">
-        <h2>Select Resource Type</h2>
-        <div id="resource-buttons"></div>
-      </div>
-
-      <!-- Form container -->
-      <div id="resource-form-container">
-        <h2 id="form-title">Create Resource</h2>
-        <form id="resource-form">
-          <div id="form-fields"></div>
-          <div id="environment-selector"></div>
-          <div style="margin-top: 1.5rem">
-            <button type="submit">Submit Request</button>
+              </svg>
+            </button>
           </div>
-        </form>
-      </div>
+          <div id="results-count" class="results-count">
+            Showing 1-2 of 2 resources
+          </div>
+        </div>
 
-      <!-- Result message container -->
-      <div id="result-message"></div>
+        <!-- Resource cards container -->
+        <div id="resource-cards-container" class="resource-cards-container">
+          <!-- Storage Account Card -->
+          <div class="card">
+            <div class="storage-icon">
+              <svg viewBox="0 0 24 24" width="20" height="20">
+                <path
+                  fill="currentColor"
+                  d="M2 20h20v-4H2v4zm2-3h2v2H4v-2zM2 4v4h20V4H2zm4 3H4V5h2v2zm-4 7h20v-4H2v4zm2-3h2v2H4v-2z"
+                ></path>
+              </svg>
+            </div>
+            <h3>Storage Accounts</h3>
+            <p>Create, configure and manage Azure storage accounts</p>
+            <!-- Updated link to create-storage-account.html -->
+            <button
+              class="card-button"
+              onclick="location.href='create-storage-account.html'"
+            >
+              Create New
+            </button>
+          </div>
+
+          <!-- Service Bus Card -->
+          <div class="card">
+            <div class="service-bus-icon">
+              <svg viewBox="0 0 24 24" width="20" height="20">
+                <path
+                  fill="currentColor"
+                  d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"
+                ></path>
+              </svg>
+            </div>
+            <h3>Service Bus Topics</h3>
+            <p>Create and configure service bus messaging infrastructure</p>
+            <!-- Updated link to create-servicebus.html -->
+            <button
+              class="card-button"
+              onclick="location.href='create-servicebus.html'"
+            >
+              Create New
+            </button>
+          </div>
+        </div>
+
+        <!-- Pagination controls -->
+        <div class="pagination-container">
+          <button id="pagination-prev" class="pagination-button" disabled>
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path
+                fill="currentColor"
+                d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"
+              />
+            </svg>
+            Previous
+          </button>
+          <span id="pagination-info" class="pagination-info">Page 1 of 1</span>
+          <button id="pagination-next" class="pagination-button">
+            Next
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path
+                fill="currentColor"
+                d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
     </main>
 
-    <!-- Load scripts -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/service-bus-form.js"></script>
-    <script src="js/storage-account-form.js"></script>
-    <script src="js/servicebus-api.js"></script>
-    <script src="js/storage-account-api.js"></script>
-    <script>
-      // Modified resource loader to handle both resource types
-      function loadResourceOptions(permissions) {
-        const resourceContainer = document.getElementById("resource-buttons");
-        resourceContainer.innerHTML = "";
-
-        // Determine available resources based on user permission
-        let availableResources = [];
-        if (userPermissions === "admin") {
-          // Use the same key as in permissions.yml
-          availableResources = permissions.teams["cie-team"].resources;
-        } else if (userPermissions === "contributor") {
-          availableResources = permissions.teams["epo-team"].resources;
-        }
-
-        // Create buttons for each resource type
-        availableResources.forEach((resource) => {
-          const button = document.createElement("button");
-          button.textContent = formatResourceName(resource);
-          button.className = "resource-button";
-          button.addEventListener("click", () => {
-            // Call appropriate form loader based on resource type
-            if (resource === "StorageAccount") {
-              loadStorageAccountForm(permissions);
-            } else if (resource === "ServiceBusTopic") {
-              loadResourceForm(resource, permissions);
-            } else {
-              // Fallback for other resource types
-              loadResourceForm(resource, permissions);
-            }
-          });
-          resourceContainer.appendChild(button);
-        });
-
-        document.getElementById("resource-selector").style.display = "block";
-      }
-
-      function formatResourceName(camelCase) {
-        return camelCase.replace(/([A-Z])/g, " $1").trim();
-      }
-    </script>
+    <!-- Scripts -->
+    <script src="js/dashboard.js"></script>
+    <script src="js/search.js"></script>
   </body>
 </html>
